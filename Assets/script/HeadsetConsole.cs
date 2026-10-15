@@ -2,24 +2,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-// Console de développement visible DANS le casque.
-// Récupère automatiquement tous les Debug.Log (snap, placement, guide, serrage...)
-// et affiche les derniers messages sur un texte TextMeshPro (ex. attaché à la manette gauche).
+// Console de dÃ©veloppement visible DANS le casque.
+// RÃ©cupÃ¨re automatiquement tous les Debug.Log (snap, placement, guide, serrage...)
+// et affiche les derniers messages sur un texte TextMeshPro (ex. attachÃ© Ã  la manette gauche).
 // Bouton X (manette gauche) : afficher / masquer.
-// Fonctionne aussi en version autonome (APK), où la Console Unity n'est pas disponible.
+// Fonctionne aussi en version autonome (APK), oÃ¹ la Console Unity n'est pas disponible.
 
 public class HeadsetConsole : MonoBehaviour
 {
     [Header("Affichage")]
     public TMP_Text output;
-    [Tooltip("Nombre de messages affichés.")]
+    [Tooltip("Nombre de messages affichÃ©s.")]
     public int maxLines = 8;
     public bool visibleAtStart = true;
 
     [Header("Filtre")]
-    [Tooltip("Si la liste est vide, tous les messages sont affichés. Sinon, seuls ceux qui contiennent un de ces mots.")]
-    public string[] onlyContaining = { "[Placement]", "[Guide]", "[Serrage]", "montage", "orientation", "endroit", "retirée", "verrouillée" };
-    [Tooltip("Masquer les messages contenant 'CheckSnap APPELE' (trop fréquents).")]
+    [Tooltip("Si la liste est vide, tous les messages sont affichÃ©s. Sinon, seuls ceux qui contiennent un de ces mots.")]
+    public string[] onlyContaining = { "[Placement]", "[Guide]", "[Serrage]", "[Outil]", "montage", "orientation", "endroit", "retirÃ©e", "verrouillÃ©e" };
+    [Tooltip("Masquer les messages contenant 'CheckSnap APPELE' (trop frÃ©quents).")]
     public bool hideCheckSnapCalls = true;
 
     [Header("Bouton")]
@@ -30,7 +30,7 @@ public class HeadsetConsole : MonoBehaviour
     private bool visible;
     private bool dirty;
 
-    void OnEnable() { Application.logMessageReceived += OnLog; }
+    void OnEnable()  { Application.logMessageReceived += OnLog; }
     void OnDisable() { Application.logMessageReceived -= OnLog; }
 
     void Start()
@@ -38,7 +38,7 @@ public class HeadsetConsole : MonoBehaviour
         visible = visibleAtStart;
         if (output != null)
         {
-            output.richText = true;   // nécessaire pour les couleurs des messages
+            output.richText = true;   // nÃ©cessaire pour les couleurs des messages
             output.gameObject.SetActive(visible);
         }
         dirty = true;
@@ -81,7 +81,7 @@ public class HeadsetConsole : MonoBehaviour
         return false;
     }
 
-    // Couleurs : vert = réussite, rouge = erreur de montage ou erreur Unity, jaune = avertissement.
+    // Couleurs : vert = rÃ©ussite, rouge = erreur de montage ou erreur Unity, jaune = avertissement.
     private string Colorize(string message, LogType type)
     {
         string time = System.DateTime.Now.ToString("HH:mm:ss");
@@ -89,8 +89,8 @@ public class HeadsetConsole : MonoBehaviour
 
         if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) color = "#FF5555";
         else if (type == LogType.Warning) color = "#FFD24D";
-        else if (message.Contains("correct") || message.Contains("validé") || message.Contains("verrouill")) color = "#5CFF7A";
-        else if (message.Contains("mauvaise") || message.Contains("SUR-SERRAGE") || message.Contains("HORS SEQUENCE")) color = "#FF5555";
+        else if (message.Contains("correct") || message.Contains("validÃ©") || message.Contains("verrouill")) color = "#5CFF7A";
+        else if (message.Contains("mauvais") ||message.Contains("SUR-SERRAGE") || message.Contains("HORS SEQUENCE")) color = "#FF5555";
         else if (message.Contains("pas encore") || message.Contains("insuffisant")) color = "#FFD24D";
 
         return "<color=#888888>" + time + "</color> <color=" + color + ">" + message + "</color>";
