@@ -3,9 +3,9 @@ using UnityEngine;
 using UnityEngine.Events;
 using TMPro;
 
-// À placer sur chaque écrou (hex nut).
+// À placer sur chaque élément à serrer : vis CHC (clé Allen) ou écrou (clé à douille).
 // Serrage symbolique en deux phases : au COUPLE (jauge) puis à l'ANGLE (compteur).
-// L'écrou est une cible d'outil (ToolTarget) : il attend une clé dynamométrique (champ Required Tool).
+// L'écrou est une cible d'outil (ToolTarget) : il attend une clé (champ Required Tool).
 // La rotation vient de l'outil engagé. Effet cliquet : seule la rotation dans le sens du serrage
 // compte, et elle s'additionne d'une prise en main à l'autre.
 
@@ -13,14 +13,15 @@ public class NutTightening : ToolTarget
 {
     public enum Phase { Inactif, Couple, Angle, Termine }
 
-    [Header("Consignes (valeurs pédagogiques, à confirmer avec l'encadrant)")]
+    [Header("Consignes (issues de la séquence de montage)")]
+    [Tooltip("Couple attendu pour CET écrou (N·m). La clé, elle, clique à la valeur réglée par l'apprenant.")]
     public float targetTorque = 35f;          // N·m
     public float torqueTolerance = 2f;        // ± N·m
     public float degreesToReachTorque = 180f; // rotation nécessaire pour atteindre le couple cible
     public float targetAngle = 90f;           // degrés
     public float angleTolerance = 10f;        // ± degrés
 
-    [Header("Comportement de la clé dynamométrique")]
+    [Header("Comportement de la clé")]
     [Tooltip("Après le clic, la clé « décroche » : la rotation supplémentaire ne fait presque plus monter le couple (0,1 = 10 %).")]
     public float postClickGain = 0.1f;
     [Tooltip("Rotation tolérée après le clic (degrés). Au-delà : sur-serrage.")]
@@ -29,9 +30,13 @@ public class NutTightening : ToolTarget
     [Header("Vibration des manettes")]
     public bool haptics = true;
 
+    public enum AxisShape { Ecrou, Vis }
+
     [Header("Géométrie")]
-    [Tooltip("Coché : l'axe de la vis est trouvé automatiquement (dimension la plus fine de l'écrou). Décoché : utilise Local Axis.")]
+    [Tooltip("Coché : l'axe de la vis est trouvé automatiquement. Décoché : utilise Local Axis.")]
     public bool autoDetectAxis = true;
+    [Tooltip("Écrou : l'axe est sa dimension la plus FINE. Vis : l'axe est sa dimension la plus LONGUE.")]
+    public AxisShape axisShape = AxisShape.Vis;
     [Tooltip("Axe de la vis dans le repère LOCAL de l'écrou : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
     public Vector3 localAxis = Vector3.up;
     [Tooltip("À cocher si la jauge ne monte pas quand on tourne dans le sens horaire.")]
@@ -48,6 +53,7 @@ public class NutTightening : ToolTarget
     public UnityEvent onTorqueValidated;
     public UnityEvent onAngleValidated;
     public UnityEvent onOverTightened;        // sur-serrage (couple ou angle)
+    public UnityEvent onUnderTightened;       // clé réglée trop bas : couple insuffisant
     public UnityEvent onOutOfSequence;        // angle commencé avant le pré-serrage de toutes les vis
 
     public Phase CurrentPhase { get; private set; } = Phase.Inactif;
@@ -62,6 +68,10 @@ public class NutTightening : ToolTarget
     private float degreesAfterClick;
     private bool overWarned;
     private bool angleReachedDone;
+    private TorqueSetting setting;            // réglage de la clé engagée (null = clé non réglable)
+
+    // Valeur à laquelle la clé clique : celle réglée sur la clé, sinon la consigne de l'écrou.
+    private float ClickTorque => setting != null ? setting.value : targetTorque;
 
     public Vector3 WorldAxis => transform.TransformDirection(localAxis).normalized;
     public bool IsActive => CurrentPhase == Phase.Couple || CurrentPhase == Phase.Angle;
@@ -69,6 +79,7 @@ public class NutTightening : ToolTarget
     // --- Interface « cible d'outil » ---
     public override bool AcceptsTool => IsActive;
     public override Vector3 ToolAxis => WorldAxis;
+    public override void OnToolEngaged(Tool tool) => setting = tool.GetComponent<TorqueSetting>();
     public override void OnToolRotate(float degrees) => AddRotation(degrees);
     public override void OnToolDisengaged() => Release();
 
@@ -76,7 +87,6 @@ public class NutTightening : ToolTarget
     {
         if (!autoDetectAxis) return;
 
-        // Un écrou est plus fin dans le sens de la vis : on prend la plus petite dimension du maillage.
         MeshFilter mf = GetComponent<MeshFilter>();
         if (mf == null || mf.sharedMesh == null)
         {
@@ -85,9 +95,20 @@ public class NutTightening : ToolTarget
         }
 
         Vector3 s = mf.sharedMesh.bounds.size;
-        if (s.x <= s.y && s.x <= s.z) localAxis = Vector3.right;
-        else if (s.y <= s.x && s.y <= s.z) localAxis = Vector3.up;
-        else localAxis = Vector3.forward;
+        if (axisShape == AxisShape.Ecrou)
+        {
+            // Un écrou est plus fin dans le sens de la vis.
+            if (s.x <= s.y && s.x <= s.z) localAxis = Vector3.right;
+            else if (s.y <= s.x && s.y <= s.z) localAxis = Vector3.up;
+            else localAxis = Vector3.forward;
+        }
+        else
+        {
+            // Une vis est plus longue dans le sens de son axe.
+            if (s.x >= s.y && s.x >= s.z) localAxis = Vector3.right;
+            else if (s.y >= s.x && s.y >= s.z) localAxis = Vector3.up;
+            else localAxis = Vector3.forward;
+        }
 
         Log("axe de vis détecté : " + localAxis);
     }
@@ -113,11 +134,11 @@ public class NutTightening : ToolTarget
                 float rate = targetTorque / degreesToReachTorque;
                 if (!clickDone)
                 {
-                    CurrentTorque += degrees * rate;
-                    if (CurrentTorque >= targetTorque - torqueTolerance)
+                    CurrentTorque = Mathf.Min(CurrentTorque + degrees * rate, ClickTorque);
+                    if (CurrentTorque >= ClickTorque)
                     {
                         clickDone = true;
-                        Log("clic : couple cible atteint, relâchez.");
+                        Log("clic à " + ClickTorque.ToString("F0") + " N·m, relâchez.");
                         Pulse(1f, 0.15f);                     // le « clic » ressenti dans la main
                         onTorqueWindowEntered.Invoke();
                     }
@@ -181,26 +202,45 @@ public class NutTightening : ToolTarget
         switch (CurrentPhase)
         {
             case Phase.Couple:
-                if (CurrentTorque < targetTorque - torqueTolerance)
+                if (!clickDone)
                 {
                     if (CurrentTorque > 0f)
-                        Log("couple insuffisant (" + CurrentTorque.ToString("F1") + " / " + targetTorque.ToString("F0") + " N·m), continuez.");
+                        Log("couple insuffisant (" + CurrentTorque.ToString("F1") + " N·m), continuez jusqu'au clic.");
+                    break;
                 }
-                else
-                {
-                    if (degreesAfterClick > maxDegreesAfterClick)
-                    {
-                        HadError = true;
-                        Log("SUR-SERRAGE au couple (" + degreesAfterClick.ToString("F0") + "° forcés après le clic).");
-                        onOverTightened.Invoke();
-                    }
-                    else Log("couple validé (" + CurrentTorque.ToString("F1") + " N·m).");
 
-                    CurrentPhase = Phase.Angle;
-                    overWarned = false;   // on repart à zéro pour la phase angulaire
-                    onTorqueValidated.Invoke();
-                    if (group != null) group.NotifyChanged();
+                if (CurrentTorque < targetTorque - torqueTolerance)
+                {
+                    // La clé a cliqué trop tôt : elle était réglée trop bas.
+                    HadError = true;
+                    Log("COUPLE INSUFFISANT : clé réglée à " + ClickTorque.ToString("F0") + " N·m au lieu de "
+                        + targetTorque.ToString("F0") + " N·m. Réglez la clé et reprenez.");
+                    onUnderTightened.Invoke();
+                    clickDone = false;            // on peut reprendre après avoir réglé la clé
+                    degreesAfterClick = 0f;
+                    overWarned = false;
+                    break;
                 }
+
+                if (CurrentTorque > targetTorque + torqueTolerance)
+                {
+                    HadError = true;
+                    Log("SUR-SERRAGE : clé réglée à " + ClickTorque.ToString("F0") + " N·m au lieu de "
+                        + targetTorque.ToString("F0") + " N·m.");
+                    onOverTightened.Invoke();
+                }
+                else if (degreesAfterClick > maxDegreesAfterClick)
+                {
+                    HadError = true;
+                    Log("SUR-SERRAGE au couple (" + degreesAfterClick.ToString("F0") + "° forcés après le clic).");
+                    onOverTightened.Invoke();
+                }
+                else Log("couple validé (" + CurrentTorque.ToString("F1") + " N·m).");
+
+                CurrentPhase = Phase.Angle;
+                overWarned = false;   // on repart à zéro pour la phase angulaire
+                onTorqueValidated.Invoke();
+                if (group != null) group.NotifyChanged();
                 break;
 
             case Phase.Angle:

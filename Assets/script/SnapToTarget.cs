@@ -30,8 +30,19 @@ public class SnapToTarget : MonoBehaviour
     [Header("Symétrie (pièces cylindriques)")]
     [Tooltip("Aucune = rotation complète vérifiée. Pour piston_pin : Axe Et Retournement.")]
     public Symmetry symmetry = Symmetry.Aucune;
+    public enum AxisShape { PlusLongue, PlusFine }
+    [Tooltip("Coché : l'axe de symétrie est trouvé automatiquement à partir de la forme de la pièce.")]
+    public bool autoDetectSymmetryAxis = true;
+    [Tooltip("Plus Longue : vis, axe de piston (l'axe suit la longueur). Plus Fine : écrou, rondelle (l'axe traverse l'épaisseur).")]
+    public AxisShape symmetryAxisShape = AxisShape.PlusLongue;
     [Tooltip("Axe de symétrie dans le repère LOCAL de la pièce : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
     public Vector3 symmetryAxis = Vector3.up;
+
+    [Header("Guidage en direct")]
+    [Tooltip("Pendant qu'on tient la pièce près de sa cible, affiche la distance et l'écart d'angle dans la console.")]
+    public bool liveGuidance = true;
+    [Tooltip("Distance (m) à partir de laquelle le guidage s'affiche.")]
+    public float guidanceDistance = 0.10f;
 
     [Header("Fantôme")]
     [Tooltip("Masque le fantôme quand la pièce est bien placée, le réaffiche si on la retire.")]
@@ -53,6 +64,8 @@ public class SnapToTarget : MonoBehaviour
 
     private Rigidbody rb;
     private bool isPlaced = false;
+    private bool isHeld = false;
+    private float nextGuidanceTime;
 
     void Awake()
     {
@@ -66,6 +79,37 @@ public class SnapToTarget : MonoBehaviour
                 if (child.name.Contains("GrabInteraction")) { grabInteraction = child.gameObject; break; }
             }
         }
+
+        // Axe de symétrie trouvé à partir des dimensions du maillage.
+        if (symmetry != Symmetry.Aucune && autoDetectSymmetryAxis)
+        {
+            MeshFilter mf = GetComponent<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null)
+            {
+                Vector3 s = mf.sharedMesh.bounds.size;
+                bool longest = symmetryAxisShape == AxisShape.PlusLongue;
+                if (longest ? (s.x >= s.y && s.x >= s.z) : (s.x <= s.y && s.x <= s.z)) symmetryAxis = Vector3.right;
+                else if (longest ? (s.y >= s.x && s.y >= s.z) : (s.y <= s.x && s.y <= s.z)) symmetryAxis = Vector3.up;
+                else symmetryAxis = Vector3.forward;
+            }
+        }
+    }
+
+    // Guidage en direct : distance et écart d'angle pendant qu'on approche la pièce de sa cible.
+    void Update()
+    {
+        if (!liveGuidance || !isHeld || isPlaced || target == null || Time.time < nextGuidanceTime) return;
+        nextGuidanceTime = Time.time + 0.5f;
+
+        float distance = Vector3.Distance(transform.position, target.position);
+        if (distance > guidanceDistance) return;
+
+        float angle = OrientationError();
+        bool posOk = distance <= positionTolerance;
+        bool angOk = angle <= angleTolerance;
+        string verdict = (posOk && angOk) ? "OK, relâchez." : (!angOk ? "tournez la pièce." : "rapprochez-la.");
+        Debug.Log("[Guide] " + name + " : " + (distance * 100f).ToString("F0") + " cm, écart "
+                  + angle.ToString("F0") + "° — " + verdict);
     }
 
     // Pour un futur scénario (démontage, reprise) : rend la pièce de nouveau attrapable.
@@ -78,6 +122,7 @@ public class SnapToTarget : MonoBehaviour
     // Si la pièce était posée, on la « désemboîte » : elle redevient à placer et le fantôme réapparaît.
     public void OnGrabbed()
     {
+        isHeld = true;
         if (!isPlaced) return;
 
         isPlaced = false;
@@ -89,6 +134,7 @@ public class SnapToTarget : MonoBehaviour
     // À appeler au relâchement de la pièce (When Unselect).
     public void CheckSnap()
     {
+        isHeld = false;
         Debug.Log(name + " : CheckSnap APPELE");
         if (isPlaced || target == null) return;
 

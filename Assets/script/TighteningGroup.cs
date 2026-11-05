@@ -1,26 +1,30 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 // À placer sur l'ensemble piston-bielle (ex. ass_pist_f).
-// - Active les écrous seulement quand le chapeau de bielle est bien emboîté (précédence).
-// - Vérifie l'ordre : toutes les vis pré-serrées au couple avant tout serrage angulaire.
+// - Le serrage ne devient possible que quand TOUTES les pièces préalables sont bien posées
+//   (chapeau de bielle, vis CHC, écrous) : c'est une contrainte de précédence.
+// - Vérifie l'ordre de serrage : toutes les vis pré-serrées au couple avant tout serrage angulaire.
 
 public class TighteningGroup : MonoBehaviour
 {
     [Header("Précédence")]
-    [Tooltip("La pièce qui doit être bien placée avant le serrage (piston_cap_rod).")]
-    public SnapToTarget prerequisite;
+    [Tooltip("Pièces à poser avant le serrage : piston_cap_rod, les 2 vis CHC, les 2 écrous.")]
+    public SnapToTarget[] prerequisites;
 
-    [Header("Écrous de ce groupe")]
-    public NutTightening[] nuts;
+    [Header("Éléments à serrer (vis CHC, ou écrous)")]
+    [FormerlySerializedAs("nuts")]
+    public NutTightening[] fasteners;
 
-    [Header("Visserie masquée tant que le chapeau n'est pas posé (vis + écrous)")]
+    [Header("Optionnel : objets masqués jusqu'à l'activation (laisser VIDE si la visserie se pose à la main)")]
     public GameObject[] showOnActivate;
 
     [Header("Mode")]
     [Tooltip("Décoché = Apprentissage (on bloque l'action hors ordre). Coché = Évaluation (on laisse faire et on enregistre l'erreur).")]
     public bool modeEvaluation = false;
 
+    public UnityEvent onActivated;
     public UnityEvent onAllTightened;
 
     private bool activated;
@@ -28,10 +32,20 @@ public class TighteningGroup : MonoBehaviour
 
     void Awake()
     {
-        foreach (var n in nuts) if (n != null) n.group = this;
+        foreach (var f in fasteners) if (f != null) f.group = this;
         foreach (var go in showOnActivate) if (go != null) go.SetActive(false);
 
-        if (prerequisite != null) prerequisite.onSnapped.AddListener(Activate);
+        if (prerequisites == null || prerequisites.Length == 0) { Activate(); return; }
+        foreach (var p in prerequisites) if (p != null) p.onSnapped.AddListener(CheckPrerequisites);
+    }
+
+    private void CheckPrerequisites()
+    {
+        if (activated) return;
+        int missing = 0;
+        foreach (var p in prerequisites) if (p != null && !p.IsPlaced) missing++;
+
+        if (missing > 0) Debug.Log("[Serrage] " + name + " : encore " + missing + " pièce(s) à poser avant le serrage.");
         else Activate();
     }
 
@@ -40,14 +54,15 @@ public class TighteningGroup : MonoBehaviour
         if (activated) return;
         activated = true;
         foreach (var go in showOnActivate) if (go != null) go.SetActive(true);
-        foreach (var n in nuts) if (n != null) n.Activate();
-        Debug.Log("[Serrage] " + name + " : chapeau posé, serrage disponible.");
+        foreach (var f in fasteners) if (f != null) f.Activate();
+        Debug.Log("[Serrage] " + name + " : visserie en place, serrage disponible.");
+        onActivated.Invoke();
     }
 
     public bool AllTorqued()
     {
-        foreach (var n in nuts)
-            if (n != null && (n.CurrentPhase == NutTightening.Phase.Inactif || n.CurrentPhase == NutTightening.Phase.Couple))
+        foreach (var f in fasteners)
+            if (f != null && (f.CurrentPhase == NutTightening.Phase.Inactif || f.CurrentPhase == NutTightening.Phase.Couple))
                 return false;
         return true;
     }
@@ -55,12 +70,12 @@ public class TighteningGroup : MonoBehaviour
     public void NotifyChanged()
     {
         if (finished) return;
-        foreach (var n in nuts)
-            if (n != null && n.CurrentPhase != NutTightening.Phase.Termine) return;
+        foreach (var f in fasteners)
+            if (f != null && f.CurrentPhase != NutTightening.Phase.Termine) return;
 
         finished = true;
         bool anyError = false;
-        foreach (var n in nuts) if (n != null && n.HadError) anyError = true;
+        foreach (var f in fasteners) if (f != null && f.HadError) anyError = true;
         Debug.Log("[Serrage] " + name + " : serrage terminé" + (anyError ? " AVEC ERREUR(S)." : " sans erreur."));
         onAllTightened.Invoke();
     }

@@ -31,9 +31,33 @@ public class Tool : MonoBehaviour
     [Tooltip("Distance (m) à laquelle l'outil s'engage sur une cible.")]
     public float engageDistance = 0.05f;
 
+    [Header("Douille")]
+    [Tooltip("Coché : l'outil ne peut serrer qu'avec une douille montée (clé à cliquet, clé dynamométrique).")]
+    public bool requiresSocket = true;
+    [Tooltip("La douille montée sur l'outil. Si elle est renseignée, le point de travail devient le bout de la douille.")]
+    public Socket socket;
+
     [Header("Mode Levier")]
     [Tooltip("Distance (m) dont il faut écarter la main de l'écrou pour décrocher la clé.")]
-    public float pullOffDistance = 0.10f;
+    public float pullOffDistance = 0.12f;
+    [Tooltip("Maintien de l'orientation : 1 = clé parfaitement dans l'axe, 0 = suit la main. Le bout, lui, reste toujours dans l'empreinte.")]
+    [Range(0f, 1f)] public float lockStrength = 0.8f;
+    [Tooltip("Durée (s) pendant laquelle la clé glisse vers l'écrou lors de l'engagement.")]
+    public float engageSmoothTime = 0.12f;
+    [Tooltip("Lissage de la rotation affichée (plus grand = plus réactif, plus petit = plus doux).")]
+    public float rotationSmoothing = 20f;
+
+    [Header("Alignement sur la cible")]
+    [Tooltip("La clé s'oriente d'elle-même dans l'axe de la vis en s'engageant.")]
+    public bool alignToTarget = true;
+    [Tooltip("Direction de la partie qui entre dans la vis, du bout vers le manche, dans le repère de l'outil. Clé Allen générée : (0, 1, 0).")]
+    public Vector3 localDriveAxis = Vector3.up;
+
+    [Header("Deuxième bout (clé Allen : le grand bras)")]
+    [Tooltip("Optionnel : objet vide au bout du deuxième bras. L'outil peut alors serrer avec l'un ou l'autre bout.")]
+    public Transform secondTip;
+    [Tooltip("Direction du deuxième bras, du bout vers le coude, dans le repère de l'outil. Clé Allen générée : (1, 0, 0) ou (-1, 0, 0).")]
+    public Vector3 secondDriveAxis = Vector3.right;
 
     [Header("Diagnostic")]
     [Tooltip("Affiche chaque seconde la distance à la cible la plus proche (à décocher une fois réglé).")]
@@ -62,13 +86,35 @@ public class Tool : MonoBehaviour
     private Quaternion engageRotation;
     private Vector3 lastLever;
     private float accumulatedAngle;
+    private float visualAngle;
+    private float engageTime;
+    private Vector3 localTip;          // point de travail dans le repère de l'outil
+    private Transform activeTip;       // bout utilisé pour le serrage en cours
+    private Vector3 activeDriveAxis;
 
     private Vector3 homeLocalPos;
     private Quaternion homeLocalRot;
     private Coroutine returning;
     private float nextDebugTime;
 
-    private Vector3 TipPos => tip != null ? tip.position : transform.position;
+    private Transform WorkTip => (socket != null && socket.nutEnd != null) ? socket.nutEnd : tip;
+    private Vector3 PosOf(Transform t) => t != null ? t.position : transform.position;
+    // Bout en cours d'utilisation (le premier tant que rien n'est engagé).
+    private Vector3 TipPos => PosOf(activeTip != null ? activeTip : WorkTip);
+
+    // Distance entre une cible et le bout le plus proche ; renvoie aussi lequel.
+    private float NearestTipDistance(ToolTarget t, out Transform which, out Vector3 driveAxis)
+    {
+        which = WorkTip; driveAxis = localDriveAxis;
+        float d = Vector3.Distance(PosOf(WorkTip), t.WorkPoint);
+        if (secondTip != null)
+        {
+            float d2 = Vector3.Distance(secondTip.position, t.WorkPoint);
+            if (d2 < d) { d = d2; which = secondTip; driveAxis = secondDriveAxis; }
+        }
+        return d;
+    }
+    private float NearestTipDistance(ToolTarget t) => NearestTipDistance(t, out _, out _);
 
     void Awake()
     {
@@ -79,6 +125,7 @@ public class Tool : MonoBehaviour
         // Le « manche » = centre visible de l'outil : c'est lui qu'on suit autour de l'écrou.
         Renderer r = GetComponentInChildren<Renderer>();
         localHandle = r != null ? transform.InverseTransformPoint(r.bounds.center) : Vector3.zero;
+        localTip = WorkTip != null ? transform.InverseTransformPoint(WorkTip.position) : Vector3.zero;
     }
 
     public void OnGrab()
@@ -147,9 +194,25 @@ public class Tool : MonoBehaviour
             lastLever = lever;
         }
 
-        // On cale l'outil : carré d'entraînement sur l'écrou, rotation uniquement autour de l'axe.
-        transform.rotation = Quaternion.AngleAxis(accumulatedAngle, axis) * engageRotation;
-        transform.position += center - TipPos;
+        // Rotation affichée lissée (le couple, lui, est compté sur la valeur exacte).
+        visualAngle = Mathf.Lerp(visualAngle, accumulatedAngle, 1f - Mathf.Exp(-rotationSmoothing * Time.deltaTime));
+
+        // Pose « calée » : carré d'entraînement sur l'écrou, rotation uniquement autour de l'axe.
+        Quaternion lockedRot = Quaternion.AngleAxis(visualAngle, axis) * engageRotation;
+        Vector3 lockedPos = center - lockedRot * Vector3.Scale(transform.lossyScale, localTip);
+
+        // Mélange entre la pose de la main et la pose calée : glissement progressif à l'engagement,
+        // puis un peu de jeu pour que la clé ne paraisse pas figée.
+        float ramp = engageSmoothTime > 0f ? Mathf.Clamp01((Time.time - engageTime) / engageSmoothTime) : 1f;
+        float s = Mathf.SmoothStep(0f, 1f, ramp);
+
+        Vector3 handPos = transform.position;
+        Quaternion handRot = transform.rotation;
+        // Orientation : un léger jeu (lockStrength). Position : recalculée pour que le bout reste
+        // exactement dans l'empreinte, quelle que soit l'orientation.
+        Quaternion finalRot = Quaternion.Slerp(handRot, lockedRot, s * lockStrength);
+        Vector3 tipLockedPos = center - finalRot * Vector3.Scale(transform.lossyScale, localTip);
+        transform.SetPositionAndRotation(Vector3.Lerp(handPos, tipLockedPos, s), finalRot);
     }
 
     private void UpdateTorsion()
@@ -177,14 +240,14 @@ public class Tool : MonoBehaviour
         foreach (var t in targets)
         {
             if (t == null || !t.isActiveAndEnabled || !t.AcceptsTool) continue;
-            float d = Vector3.Distance(TipPos, t.WorkPoint);
+            float d = NearestTipDistance(t);
             if (d <= best) { best = d; nearest = t; }
         }
 
         if (nearest == null)
         {
             // On s'est éloigné de la cible signalée : un nouveau passage pourra re-déclencher le message.
-            if (warnedTarget != null && Vector3.Distance(TipPos, warnedTarget.WorkPoint) > engageDistance * 2f)
+            if (warnedTarget != null && NearestTipDistance(warnedTarget) > engageDistance * 2f)
                 warnedTarget = null;
             return;
         }
@@ -201,15 +264,54 @@ public class Tool : MonoBehaviour
             return;
         }
 
+        // Douille : absente, ou de mauvaise taille ?
+        if (requiresSocket)
+        {
+            string problem = null;
+            if (socket == null)
+                problem = "pas de douille montée sur la " + ToolNames.Of(type) + ".";
+            else if (!string.IsNullOrEmpty(nearest.requiredSocketSize) && socket.size != nearest.requiredSocketSize)
+                problem = "mauvaise douille sur " + nearest.name + " : douille " + socket.size + " montée, il faut une douille " + nearest.requiredSocketSize + ".";
+
+            if (problem != null)
+            {
+                if (warnedTarget != nearest)
+                {
+                    warnedTarget = nearest;
+                    Debug.Log("[Outil] " + problem);
+                    onWrongTool.Invoke();
+                }
+                return;
+            }
+        }
+
         engaged = nearest;
+
+        // Bout utilisé, et point qui sert de « manche » (l'autre bout s'il existe, sinon le centre de l'outil).
+        NearestTipDistance(nearest, out activeTip, out activeDriveAxis);
+        localTip = transform.InverseTransformPoint(PosOf(activeTip));
+        if (secondTip != null)
+        {
+            Transform other = activeTip == secondTip ? WorkTip : secondTip;
+            localHandle = transform.InverseTransformPoint(PosOf(other));
+        }
+
         lastRotation = transform.rotation;
         engageRotation = transform.rotation;
+        if (alignToTarget)
+        {
+            // On fait coïncider l'axe de la partie engagée avec l'axe de la vis (côté tête).
+            Vector3 drive = transform.TransformDirection(activeDriveAxis).normalized;
+            engageRotation = Quaternion.FromToRotation(drive, nearest.OutwardAxis) * transform.rotation;
+        }
         accumulatedAngle = 0f;
+        visualAngle = 0f;
+        engageTime = Time.time;
         lastLever = Vector3.ProjectOnPlane(transform.TransformPoint(localHandle) - nearest.WorkPoint, nearest.ToolAxis.normalized);
 
         engaged.OnToolEngaged(this);
         onEngaged.Invoke();
-        Log("engagé sur " + nearest.name + ".");
+        Log("engagé sur " + nearest.name + (secondTip != null ? (activeTip == secondTip ? " (grand bras)." : " (petit bras).") : "."));
     }
 
     private void Disengage()
@@ -217,6 +319,7 @@ public class Tool : MonoBehaviour
         if (engaged == null) return;
         ToolTarget t = engaged;
         engaged = null;
+        activeTip = null;
         t.OnToolDisengaged();
         Log("désengagé de " + t.name + ".");
     }
@@ -231,7 +334,7 @@ public class Tool : MonoBehaviour
         foreach (var t in targets)
         {
             if (t == null || !t.isActiveAndEnabled) continue;
-            float d = Vector3.Distance(TipPos, t.WorkPoint);
+            float d = NearestTipDistance(t);
             if (d < best) { best = d; nearest = t; }
         }
         if (nearest != null)
