@@ -566,6 +566,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &65587494
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2788,6 +2791,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &348594299
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3312,6 +3318,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &395935961
 GameObject:
   m_ObjectHideFlags: 0
@@ -3704,6 +3713,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onUnsnapped:
+    m_PersistentCalls:
+      m_Calls: []
+  onGrab:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &422609850
@@ -5736,6 +5748,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!64 &711321906
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -5800,6 +5815,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onUnderTightened:
+    m_PersistentCalls:
+      m_Calls: []
+  onAngleReached:
     m_PersistentCalls:
       m_Calls: []
   onOutOfSequence:
@@ -7539,6 +7557,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1594818549}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &931840240
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 931840242}
+  - component: {fileID: 931840241}
+  m_Layer: 0
+  m_Name: Tutoriel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &931840241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 931840240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3d931934d47a4b4d86bf785c6dd40c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TutorialGuide
+  panel: {fileID: 0}
+  placer: {fileID: 0}
+  sequence: {fileID: 0}
+  tighteningGroup: {fileID: 0}
+  showHints: 1
+  hintDuration: 7
+--- !u!4 &931840242
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 931840240}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.471, y: 1.527, z: 2.368}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &940904584
 GameObject:
   m_ObjectHideFlags: 0
@@ -8092,6 +8160,9 @@ MonoBehaviour:
   debugDistances: 1
   returnHomeOnRelease: 1
   returnDuration: 0.4
+  onGrabbed:
+    m_PersistentCalls:
+      m_Calls: []
   onEngaged:
     m_PersistentCalls:
       m_Calls: []
@@ -8458,6 +8529,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onUnsnapped:
+    m_PersistentCalls:
+      m_Calls: []
+  onGrab:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &1037093787
@@ -9989,6 +10063,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1216619825
 GameObject:
   m_ObjectHideFlags: 0
@@ -10353,6 +10430,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!64 &1236893885
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -10417,6 +10497,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onUnderTightened:
+    m_PersistentCalls:
+      m_Calls: []
+  onAngleReached:
     m_PersistentCalls:
       m_Calls: []
   onOutOfSequence:
@@ -12350,7 +12433,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 1}
-  m_SizeDelta: {x: 0.8, y: 0.3}
+  m_SizeDelta: {x: 0.8, y: 0.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1548091365
 GameObject:
@@ -15017,6 +15100,9 @@ MonoBehaviour:
   debugDistances: 1
   returnHomeOnRelease: 1
   returnDuration: 0.4
+  onGrabbed:
+    m_PersistentCalls:
+      m_Calls: []
   onEngaged:
     m_PersistentCalls:
       m_Calls: []
@@ -16142,6 +16228,9 @@ MonoBehaviour:
   onUnsnapped:
     m_PersistentCalls:
       m_Calls: []
+  onGrab:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2028384384
 GameObject:
   m_ObjectHideFlags: 0
@@ -16874,6 +16963,7 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1444648106}
   - {fileID: 1985601911}
-  - {fileID: 972266402}
   - {fileID: 1545634781}
   - {fileID: 403513305}
+  - {fileID: 931840242}
+  - {fileID: 972266402}

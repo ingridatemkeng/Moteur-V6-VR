@@ -68,6 +68,7 @@ public class Tool : MonoBehaviour
     public float returnDuration = 0.4f;
 
     [Header("Réactions (vibration, son... à câbler à l'étape feedback)")]
+    public UnityEvent onGrabbed;
     public UnityEvent onEngaged;
     public UnityEvent onWrongTool;
 
@@ -131,6 +132,7 @@ public class Tool : MonoBehaviour
     public void OnGrab()
     {
         held = true;
+        onGrabbed.Invoke();
         if (returning != null) { StopCoroutine(returning); returning = null; }
         // Les cibles masquées (écrous pas encore disponibles) ne sont pas trouvées : c'est voulu.
         targets = FindObjectsByType<ToolTarget>(FindObjectsSortMode.None);

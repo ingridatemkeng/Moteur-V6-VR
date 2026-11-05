@@ -5,7 +5,7 @@ using TMPro;
 
 // À placer sur chaque élément à serrer : vis CHC (clé Allen) ou écrou (clé à douille).
 // Serrage symbolique en deux phases : au COUPLE (jauge) puis à l'ANGLE (compteur).
-// L'écrou est une cible d'outil (ToolTarget) : il attend une clé (champ Required Tool).
+// L'écrou est une cible d'outil (ToolTarget) : il attend une clé dynamométrique (champ Required Tool).
 // La rotation vient de l'outil engagé. Effet cliquet : seule la rotation dans le sens du serrage
 // compte, et elle s'additionne d'une prise en main à l'autre.
 
@@ -21,7 +21,7 @@ public class NutTightening : ToolTarget
     public float targetAngle = 90f;           // degrés
     public float angleTolerance = 10f;        // ± degrés
 
-    [Header("Comportement de la clé")]
+    [Header("Comportement de la clé dynamométrique")]
     [Tooltip("Après le clic, la clé « décroche » : la rotation supplémentaire ne fait presque plus monter le couple (0,1 = 10 %).")]
     public float postClickGain = 0.1f;
     [Tooltip("Rotation tolérée après le clic (degrés). Au-delà : sur-serrage.")]
@@ -54,6 +54,7 @@ public class NutTightening : ToolTarget
     public UnityEvent onAngleValidated;
     public UnityEvent onOverTightened;        // sur-serrage (couple ou angle)
     public UnityEvent onUnderTightened;       // clé réglée trop bas : couple insuffisant
+    public UnityEvent onAngleReached;         // angle cible atteint (avant le relâchement)
     public UnityEvent onOutOfSequence;        // angle commencé avant le pré-serrage de toutes les vis
 
     public Phase CurrentPhase { get; private set; } = Phase.Inactif;
@@ -175,6 +176,7 @@ public class NutTightening : ToolTarget
                     angleReachedDone = true;
                     Log("angle cible atteint, relâchez.");
                     Pulse(1f, 0.15f);
+                    onAngleReached.Invoke();
                 }
                 else if (angleReachedDone && !overWarned && CurrentAngle > targetAngle + angleTolerance)
                 {

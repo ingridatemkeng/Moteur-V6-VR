@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -38,6 +40,12 @@ public class SnapToTarget : MonoBehaviour
     [Tooltip("Axe de symétrie dans le repère LOCAL de la pièce : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
     public Vector3 symmetryAxis = Vector3.up;
 
+    [Header("Pièces identiques (vis, écrous, pistons...)")]
+    [Tooltip("Coché : une pièce identique peut aller sur l'emplacement d'une autre (les deux échangent leurs emplacements). À décocher pour les pièces appairées (ex. chapeau de bielle, propre à sa bielle).")]
+    public bool interchangeable = true;
+    [Tooltip("Famille de la pièce. Vide = déduite du nom (« hex nut… » et « hex nut….001 » sont de la même famille).")]
+    public string partFamily = "";
+
     [Header("Guidage en direct")]
     [Tooltip("Pendant qu'on tient la pièce près de sa cible, affiche la distance et l'écart d'angle dans la console.")]
     public bool liveGuidance = true;
@@ -59,6 +67,8 @@ public class SnapToTarget : MonoBehaviour
     public UnityEvent onWrongOrientation;    // bon endroit, mauvaise orientation
     public UnityEvent onWrongPlace;          // pas au bon endroit
     public UnityEvent onUnsnapped;           // pièce retirée après avoir été bien posée
+    public UnityEvent onGrab;                // pièce attrapée (utilisé par le tutoriel)
+    public UnityEvent onWrongPiece;          // posée sur l'emplacement d'une AUTRE sorte de pièce
 
     public bool IsPlaced => isPlaced;
 
@@ -66,6 +76,22 @@ public class SnapToTarget : MonoBehaviour
     private bool isPlaced = false;
     private bool isHeld = false;
     private float nextGuidanceTime;
+
+    // Toutes les pièces de la scène, pour reconnaître un emplacement occupé par la mauvaise pièce.
+    private static readonly List<SnapToTarget> all = new List<SnapToTarget>();
+    void OnEnable() { if (!all.Contains(this)) all.Add(this); }
+    void OnDestroy() { all.Remove(this); }
+
+    // Famille : le nom sans les suffixes de copie (« .001 », « (1) », « _Target »...).
+    public string Family
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(partFamily)) return partFamily;
+            string n = Regex.Replace(name, @"(\.\d+|\s*\(\d+\))+$", "");
+            return n.Trim().ToLowerInvariant();
+        }
+    }
 
     void Awake()
     {
@@ -123,6 +149,7 @@ public class SnapToTarget : MonoBehaviour
     public void OnGrabbed()
     {
         isHeld = true;
+        onGrab.Invoke();
         if (!isPlaced) return;
 
         isPlaced = false;
@@ -162,6 +189,8 @@ public class SnapToTarget : MonoBehaviour
                 else Debug.LogWarning(name + " : verrouillage impossible, objet de préhension introuvable.");
             }
         }
+        // Cas 2bis : la pièce est sur l'emplacement d'une AUTRE pièce
+        else if (distance > positionTolerance && CheckOtherSlots()) { }
         // Cas 2 : bon endroit MAIS mauvaise orientation -> erreur d'orientation
         else if (distance <= positionTolerance)
         {
@@ -174,6 +203,45 @@ public class SnapToTarget : MonoBehaviour
             Debug.Log(name + " : pas encore au bon endroit.");
             onWrongPlace.Invoke();
         }
+    }
+
+    // Vérifie si la pièce a été relâchée sur l'emplacement d'une autre pièce encore libre.
+    // - Même famille et interchangeable : on échange les emplacements, puis on vérifie la pose normalement.
+    // - Autre famille : erreur « mauvaise pièce ».
+    // Renvoie true si la situation a été traitée.
+    private bool CheckOtherSlots()
+    {
+        SnapToTarget other = null;
+        float best = positionTolerance;
+        foreach (var p in all)
+        {
+            if (p == this || p == null || p.isPlaced || p.target == null) continue;
+            float d = Vector3.Distance(transform.position, p.target.position);
+            if (d <= best) { best = d; other = p; }
+        }
+        if (other == null) return false;
+
+        if (interchangeable && other.interchangeable && other.Family == Family)
+        {
+            // Pièces identiques : chacune prend l'emplacement de l'autre.
+            Transform mine = target;
+            target = other.target;
+            other.target = mine;
+            Debug.Log(name + " : emplacement de " + other.name + " utilisé (pièces identiques).");
+            if (!other.target.gameObject.activeSelf && target.gameObject.activeSelf)
+            {
+                // On garde l'affichage des fantômes cohérent.
+                other.target.gameObject.SetActive(true);
+                target.gameObject.SetActive(false);
+            }
+            isHeld = false;
+            CheckSnap();            // nouvelle vérification avec la bonne cible
+            return true;
+        }
+
+        Debug.Log(name + " : MAUVAISE PIÈCE, pas le bon endroit pour elle : cet emplacement attend « " + other.name + " ».");
+        onWrongPiece.Invoke();
+        return true;
     }
 
     // Écart d'orientation (en degrés) entre la pièce et sa cible, en tenant compte de la symétrie.
