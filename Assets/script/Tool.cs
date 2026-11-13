@@ -38,8 +38,10 @@ public class Tool : MonoBehaviour
     public Socket socket;
 
     [Header("Mode Levier")]
-    [Tooltip("Distance (m) dont il faut écarter la main de l'écrou pour décrocher la clé.")]
-    public float pullOffDistance = 0.12f;
+    [Tooltip("Distance (m) dont il faut TIRER la clé vers l'extérieur, dans l'axe de la vis, pour la retirer. Les mouvements de côté (rotation) ne la décrochent pas.")]
+    public float pullOffDistance = 0.06f;
+    [Tooltip("Sécurité : au-delà de cette distance dans n'importe quelle direction, la clé se retire aussi (geste très brusque).")]
+    public float maxHandDistance = 0.35f;
     [Tooltip("Maintien de l'orientation : 1 = clé parfaitement dans l'axe, 0 = suit la main. Le bout, lui, reste toujours dans l'empreinte.")]
     [Range(0f, 1f)] public float lockStrength = 0.8f;
     [Tooltip("Durée (s) pendant laquelle la clé glisse vers l'écrou lors de l'engagement.")]
@@ -59,9 +61,15 @@ public class Tool : MonoBehaviour
     [Tooltip("Direction du deuxième bras, du bout vers le coude, dans le repère de l'outil. Clé Allen générée : (1, 0, 0) ou (-1, 0, 0).")]
     public Vector3 secondDriveAxis = Vector3.right;
 
+    [Header("Clé plantée dans la vis")]
+    [Tooltip("Coché : une fois dans la vis, la clé est figée dans l'axe et RESTE en place quand on la lâche. Pour la retirer : l'attraper et tirer de plus de Pull Off Distance.")]
+    public bool keepSeated = true;
+
     [Header("Diagnostic")]
     [Tooltip("Affiche chaque seconde la distance à la cible la plus proche (à décocher une fois réglé).")]
     public bool debugDistances = true;
+    [Tooltip("Pendant qu'on tient l'outil : PETITE bille verte sur le bout de l'outil, GROSSE bille rouge sur le point visé de la vis la plus proche. Visible dans le casque.")]
+    public bool debugMarkers = false;
 
     [Header("Retour à sa place")]
     public bool returnHomeOnRelease = true;
@@ -92,11 +100,16 @@ public class Tool : MonoBehaviour
     private Vector3 localTip;          // point de travail dans le repère de l'outil
     private Transform activeTip;       // bout utilisé pour le serrage en cours
     private Vector3 activeDriveAxis;
+    private ToolTarget seatedOn;       // cible dans laquelle la clé est restée plantée (clé lâchée)
+    private Vector3 lockedPosition;    // dernière pose calée dans le creux (mise à jour à chaque image)
+    private Quaternion lockedRotation;
+    private bool hasLockedPose;
 
     private Vector3 homeLocalPos;
     private Quaternion homeLocalRot;
     private Coroutine returning;
     private float nextDebugTime;
+    private Transform markerTip, markerTarget;
 
     private Transform WorkTip => (socket != null && socket.nutEnd != null) ? socket.nutEnd : tip;
     private Vector3 PosOf(Transform t) => t != null ? t.position : transform.position;
@@ -140,6 +153,25 @@ public class Tool : MonoBehaviour
 
         int ready = 0;
         foreach (var t in targets) if (t != null && t.AcceptsTool) ready++;
+        if (seatedOn != null)
+        {
+            ToolTarget t = seatedOn;
+            seatedOn = null;
+            if (t.AcceptsTool)
+            {
+                engaged = t;
+                engageRotation = transform.rotation;          // déjà dans l'axe
+                accumulatedAngle = 0f;
+                visualAngle = 0f;
+                engageTime = Time.time - engageSmoothTime;   // pas de glissement : elle est déjà en place
+                lastLever = Vector3.ProjectOnPlane(transform.TransformPoint(localHandle) - t.WorkPoint, t.ToolAxis.normalized);
+                t.OnToolEngaged(this);
+                Log("reprise dans " + t.name + " : tournez, ou tirez pour la retirer.");
+                return;
+            }
+            activeTip = null;   // vis terminée : la clé redevient libre
+        }
+
         Log("pris en main. Cibles trouvées : " + targets.Length + ", prêtes : " + ready + ".");
         if (targets.Length == 0) Log("aucune cible : les écrous sont masqués (chapeau pas encore posé ?) ou n'ont pas le composant Nut Tightening.");
         else if (ready == 0) Log("aucune cible prête : posez d'abord le chapeau de bielle.");
@@ -147,7 +179,24 @@ public class Tool : MonoBehaviour
 
     public void OnRelease()
     {
+        // Relâchement signalé en double par l'Interaction SDK : la clé est déjà plantée, on ne fait rien.
+        if (seatedOn != null) return;
+        if (!held && engaged == null && returning != null) return;
+
         held = false;
+
+        if (keepSeated && engaged != null)
+        {
+            // Fin du geste : la vis juge le couple / l'angle, mais la clé reste plantée et immobile.
+            seatedOn = engaged;
+            engaged = null;
+            if (hasLockedPose) transform.SetPositionAndRotation(lockedPosition, lockedRotation);
+            seatedOn.OnToolDisengaged();
+            Log("laissée dans " + seatedOn.name + ".");
+            return;
+        }
+
+        Log("relâchée hors d'une vis : retour à sa place.");
         Disengage();
         if (returnHomeOnRelease) returning = StartCoroutine(ReturnHome());
     }
@@ -164,6 +213,18 @@ public class Tool : MonoBehaviour
 
     void LateUpdate()
     {
+        LateUpdateLevier();
+
+        // Clé plantée et lâchée : on la remet dans le creux à chaque image,
+        // même si l'Interaction SDK l'a déplacée au moment du relâchement.
+        if (!held && seatedOn != null && hasLockedPose)
+            transform.SetPositionAndRotation(lockedPosition, lockedRotation);
+
+        UpdateMarkers();      // après le calage : les billes montrent la position réelle
+    }
+
+    private void LateUpdateLevier()
+    {
         if (!held || engaged == null || driveMode != DriveMode.Levier) return;
 
         Vector3 axis = engaged.ToolAxis.normalized;
@@ -173,9 +234,15 @@ public class Tool : MonoBehaviour
         Vector3 handTip = TipPos;
         Vector3 handHandle = transform.TransformPoint(localHandle);
 
-        // Main écartée de l'écrou, ou cible terminée -> on décroche.
-        if (!engaged.AcceptsTool || Vector3.Distance(handTip, center) > pullOffDistance)
+        // On ne retire la clé que si on la TIRE dans l'axe de la vis (vers l'extérieur),
+        // ou en cas de geste très brusque. Les mouvements de côté, pendant la rotation, ne comptent pas.
+        Vector3 fromCenter = handTip - center;
+        float pulledOut = Vector3.Dot(fromCenter, engaged.OutwardAxis);
+        if (!engaged.AcceptsTool || pulledOut > pullOffDistance || fromCenter.magnitude > maxHandDistance)
         {
+            if (!engaged.AcceptsTool) Log("vis terminée : la clé se libère.");
+            else if (pulledOut > pullOffDistance) Log("tirée de " + (pulledOut * 100f).ToString("F0") + " cm dans l'axe : retirée.");
+            else Log("main à " + (fromCenter.magnitude * 100f).ToString("F0") + " cm de la vis (geste brusque) : retirée.");
             Disengage();
             return;
         }
@@ -212,9 +279,75 @@ public class Tool : MonoBehaviour
         Quaternion handRot = transform.rotation;
         // Orientation : un léger jeu (lockStrength). Position : recalculée pour que le bout reste
         // exactement dans l'empreinte, quelle que soit l'orientation.
-        Quaternion finalRot = Quaternion.Slerp(handRot, lockedRot, s * lockStrength);
+        float rotLock = keepSeated ? 1f : lockStrength;   // plantée : parfaitement dans l'axe
+        Quaternion finalRot = Quaternion.Slerp(handRot, lockedRot, s * rotLock);
         Vector3 tipLockedPos = center - finalRot * Vector3.Scale(transform.lossyScale, localTip);
         transform.SetPositionAndRotation(Vector3.Lerp(handPos, tipLockedPos, s), finalRot);
+
+        // On garde en mémoire la pose « dans le creux » (une fois le glissement d'engagement terminé).
+        if (s >= 1f)
+        {
+            lockedPosition = tipLockedPos;
+            lockedRotation = finalRot;
+            hasLockedPose = true;
+        }
+    }
+
+    // ---------- Billes de diagnostic ----------
+
+    private Transform MakeMarker(Color c, float size)
+    {
+        GameObject g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        Destroy(g.GetComponent<Collider>());
+        g.transform.localScale = Vector3.one * size;
+        Renderer r = g.GetComponent<Renderer>();
+
+        // On réutilise le matériau de l'outil (il est inclus dans le build, contrairement au matériau
+        // par défaut qui s'affiche en magenta), puis on le recolore.
+        Renderer toolRenderer = GetComponentInChildren<Renderer>();
+        if (toolRenderer != null && toolRenderer.sharedMaterial != null)
+            r.material = new Material(toolRenderer.sharedMaterial);
+        if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", c);
+        if (r.material.HasProperty("_Color")) r.material.SetColor("_Color", c);
+        if (r.material.HasProperty("_EmissionColor"))
+        {
+            r.material.EnableKeyword("_EMISSION");
+            r.material.SetColor("_EmissionColor", c);   // bien visible même dans l'ombre
+        }
+
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        g.name = "Diagnostic_" + name;
+        return g.transform;
+    }
+
+    private void UpdateMarkers()
+    {
+        bool show = debugMarkers && held;
+        if (!show)
+        {
+            if (markerTip != null) markerTip.gameObject.SetActive(false);
+            if (markerTarget != null) markerTarget.gameObject.SetActive(false);
+            return;
+        }
+        if (markerTip == null) markerTip = MakeMarker(Color.green, 0.01f);      // petite bille : bout de l'outil
+        if (markerTarget == null) markerTarget = MakeMarker(Color.red, 0.02f);  // grosse bille : point visé
+
+        markerTip.gameObject.SetActive(true);
+        markerTip.position = TipPos;
+
+        ToolTarget t = engaged;
+        if (t == null && targets != null)
+        {
+            float best = float.MaxValue;
+            foreach (var c in targets)
+            {
+                if (c == null || !c.isActiveAndEnabled) continue;
+                float d = NearestTipDistance(c);
+                if (d < best) { best = d; t = c; }
+            }
+        }
+        markerTarget.gameObject.SetActive(t != null);
+        if (t != null) markerTarget.position = t.WorkPoint;
     }
 
     private void UpdateTorsion()
@@ -288,6 +421,8 @@ public class Tool : MonoBehaviour
         }
 
         engaged = nearest;
+        if (nearest.workPointOverride == null)
+            Debug.LogWarning("[Outil] pas d'objet Empreinte sur " + nearest.name + " : la clé vise le CENTRE de la vis. Renseignez Work Point Override.");
 
         // Bout utilisé, et point qui sert de « manche » (l'autre bout s'il existe, sinon le centre de l'outil).
         NearestTipDistance(nearest, out activeTip, out activeDriveAxis);
@@ -309,6 +444,7 @@ public class Tool : MonoBehaviour
         accumulatedAngle = 0f;
         visualAngle = 0f;
         engageTime = Time.time;
+        hasLockedPose = false;
         lastLever = Vector3.ProjectOnPlane(transform.TransformPoint(localHandle) - nearest.WorkPoint, nearest.ToolAxis.normalized);
 
         engaged.OnToolEngaged(this);
@@ -322,8 +458,9 @@ public class Tool : MonoBehaviour
         ToolTarget t = engaged;
         engaged = null;
         activeTip = null;
+        hasLockedPose = false;
         t.OnToolDisengaged();
-        Log("désengagé de " + t.name + ".");
+        Log("retirée de " + t.name + ".");
     }
 
     private void DebugNearest()

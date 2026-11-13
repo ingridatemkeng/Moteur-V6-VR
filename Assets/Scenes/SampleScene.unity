@@ -549,6 +549,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -567,6 +569,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1001 &65587494
@@ -2295,27 +2300,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.00218
+      value: 0.0021767602
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.0009
+      value: -0.0008820946
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.00355
+      value: -0.0035440433
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.11265712
+      value: -0.11904979
+      objectReference: {fileID: 0}
+    - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7376868
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.6980748
+      value: -0.6560755
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.11265712
+      value: -0.105879106
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -2323,7 +2332,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -3830727654560780935, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -90
+      value: -276.702
       objectReference: {fileID: 0}
     - target: {fileID: -2480445851525555457, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2774,6 +2783,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 1
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -2792,6 +2803,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &348594299
@@ -3301,6 +3315,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 0
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -3319,6 +3335,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &395935961
@@ -3698,6 +3717,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -3716,6 +3737,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &422609850
@@ -5731,6 +5755,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -5749,6 +5775,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &711321906
@@ -6192,6 +6221,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1195419784}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &729266679
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 729266680}
+  m_Layer: 0
+  m_Name: BoutPetitBras
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &729266680
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 729266679}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.000000059604645, z: 0.000000102678314}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 986531137}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &736023221
 GameObject:
@@ -7996,6 +8056,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f255153d0c9fbe648afbb5cf340197ab, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2080265865}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f255153d0c9fbe648afbb5cf340197ab, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 729266680}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f255153d0c9fbe648afbb5cf340197ab, type: 3}
       insertIndex: -1
@@ -8145,11 +8208,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Tool
   type: 3
   driveMode: 0
-  tip: {fileID: 0}
+  tip: {fileID: 729266680}
   engageDistance: 0.05
   requiresSocket: 0
   socket: {fileID: 0}
-  pullOffDistance: 0.1
+  pullOffDistance: 0.06
+  maxHandDistance: 0.35
   lockStrength: 0.95
   engageSmoothTime: 0.12
   rotationSmoothing: 20
@@ -8157,7 +8221,9 @@ MonoBehaviour:
   localDriveAxis: {x: 0, y: 1, z: 0}
   secondTip: {fileID: 2080265865}
   secondDriveAxis: {x: 1, y: 0, z: 0}
-  debugDistances: 1
+  keepSeated: 1
+  debugDistances: 0
+  debugMarkers: 0
   returnHomeOnRelease: 1
   returnDuration: 0.4
   onGrabbed:
@@ -8514,6 +8580,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 1
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -8532,6 +8600,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &1037093787
@@ -10046,6 +10117,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -10064,6 +10137,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1216619825
@@ -10413,6 +10489,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -10431,6 +10509,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &1236893885
@@ -10998,8 +11079,8 @@ MonoBehaviour:
   - {fileID: 62814583}
   - {fileID: 2024695426}
   - {fileID: 1236893884}
-  - {fileID: 348594298}
   - {fileID: 711321905}
+  - {fileID: 348594298}
   - {fileID: 1037093786}
 --- !u!1 &1313193016
 GameObject:
@@ -15090,6 +15171,7 @@ MonoBehaviour:
   requiresSocket: 1
   socket: {fileID: 1857354687}
   pullOffDistance: 0.1
+  maxHandDistance: 0.35
   lockStrength: 0.8
   engageSmoothTime: 0.12
   rotationSmoothing: 20
@@ -15097,7 +15179,9 @@ MonoBehaviour:
   localDriveAxis: {x: 0, y: 1, z: 0}
   secondTip: {fileID: 0}
   secondDriveAxis: {x: 1, y: 0, z: 0}
+  keepSeated: 1
   debugDistances: 1
+  debugMarkers: 1
   returnHomeOnRelease: 1
   returnDuration: 0.4
   onGrabbed:
@@ -16211,6 +16295,8 @@ MonoBehaviour:
   autoDetectSymmetryAxis: 1
   symmetryAxisShape: 0
   symmetryAxis: {x: 0, y: 1, z: 0}
+  interchangeable: 1
+  partFamily: 
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -16229,6 +16315,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onGrab:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &2028384384

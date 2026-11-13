@@ -76,7 +76,7 @@ public class TutorialGuide : MonoBehaviour
                     "Approchez le bout de l'outil de la tête d'une vis :\nil s'y engage tout seul.");
             });
             t.onEngaged.AddListener(() => Hint("engaged",
-                "Faites pivoter le manche autour de la vis,\ndans le sens du vissage (sens des aiguilles d'une montre).\nFaites des allers-retours : au retour, la vis ne tourne pas."));
+                "La clé est dans la vis. Faites pivoter le manche\ndans le sens du vissage (aiguilles d'une montre).\nVous pouvez la lâcher : elle reste dans la vis.\nPour la retirer, attrapez-la et tirez-la\ndans l'axe de la vis, vers l'extérieur."));
             t.onWrongTool.AddListener(() => Hint("wrong-tool",
                 "Ce n'est pas le bon outil (voir la console).\nReposez-le et prenez " + ExpectedToolText() + "."));
         }
