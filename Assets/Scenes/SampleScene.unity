@@ -5315,6 +5315,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1640670499}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &669541562
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 669541564}
+  - component: {fileID: 669541563}
+  m_Layer: 0
+  m_Name: Journal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &669541563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669541562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33a39d993bae46f4ca5ca854b2f369c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SessionLogger
+  participant: P01
+  recording: 1
+--- !u!4 &669541564
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 669541562}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.53007, y: 1.3885, z: 2.34372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &669577686
 GameObject:
   m_ObjectHideFlags: 0
@@ -5817,13 +5863,14 @@ MonoBehaviour:
   requiredTool: 3
   requiredSocketSize: 1/2"
   workPointOverride: {fileID: 584322428}
-  targetTorque: 35
+  targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 180
+  degreesToReachTorque: 360
+  angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 30
+  maxDegreesAfterClick: 60
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -7806,6 +7853,7 @@ GameObject:
   m_Component:
   - component: {fileID: 972266402}
   - component: {fileID: 972266401}
+  - component: {fileID: 972266403}
   m_Layer: 0
   m_Name: Poste
   m_TagString: Untagged
@@ -7859,6 +7907,32 @@ Transform:
   - {fileID: 986531137}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &972266403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 972266400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cb191428c5737e48bf91797d14314f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EngineFlipper
+  engine: {fileID: 1300911471}
+  blockRenderer: {fileID: 1613353662}
+  requiredGroup: {fileID: 0}
+  placer: {fileID: 0}
+  flipButton: 8
+  controller: 1
+  duration: 2.5
+  localFlipAxis: {x: 0, y: 0, z: 0}
+  onFlipAvailable:
+    m_PersistentCalls:
+      m_Calls: []
+  onFlipped:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &975918722
 GameObject:
   m_ObjectHideFlags: 0
@@ -10551,13 +10625,14 @@ MonoBehaviour:
   requiredTool: 3
   requiredSocketSize: 1/2"
   workPointOverride: {fileID: 1050795487}
-  targetTorque: 35
+  targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 180
+  degreesToReachTorque: 360
+  angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 30
+  maxDegreesAfterClick: 60
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -17056,3 +17131,4 @@ SceneRoots:
   - {fileID: 403513305}
   - {fileID: 931840242}
   - {fileID: 972266402}
+  - {fileID: 669541564}

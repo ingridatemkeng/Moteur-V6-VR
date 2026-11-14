@@ -30,6 +30,9 @@ public class TutorialGuide : MonoBehaviour
     private float hintUntil;
     private readonly HashSet<string> shown = new HashSet<string>();
 
+    // Prévient le journal de session qu'une astuce vient d'être affichée (clé de l'astuce).
+    public static event System.Action<string> HintShown;
+
     void Start()
     {
         // « Include » : le contenu du poste est masqué au démarrage, il faut quand même le trouver.
@@ -86,8 +89,10 @@ public class TutorialGuide : MonoBehaviour
         {
             tighteningGroup.onActivated.AddListener(() =>
                 SetStep("Serrage : prenez " + ExpectedToolText() + " sur l'établi\net serrez chaque vis au couple."));
+            bool hasFlipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include) != null;
             tighteningGroup.onAllTightened.AddListener(() =>
-                SetStep("Montage terminé, bravo !\nL'ensemble piston-bielle est monté et serré."));
+                SetStep("Montage terminé, bravo !\nL'ensemble piston-bielle est monté et serré."
+                        + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : "")));
 
             foreach (var f in tighteningGroup.fasteners)
             {
@@ -96,7 +101,7 @@ public class TutorialGuide : MonoBehaviour
                     "Clic ! Le couple est atteint : relâchez la gâchette.\nPassez ensuite à l'autre vis."));
                 f.onTorqueValidated.AddListener(() =>
                 {
-                    if (tighteningGroup.AllTorqued())
+                    if (f.angleStep && tighteningGroup.AllTorqued())
                         SetStep("Toutes les vis sont au couple.\nSerrage angulaire : tournez chaque vis de "
                                 + f.targetAngle.ToString("F0") + "° de plus.");
                 });
@@ -194,6 +199,7 @@ public class TutorialGuide : MonoBehaviour
         hintText = text;
         hintUntil = Time.time + hintDuration;
         Refresh();
+        HintShown?.Invoke(key);
     }
 
     void Update()

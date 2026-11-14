@@ -196,7 +196,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogInteraction
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 133884
+// Method Definition Index: 133956
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void ArrayElementTitleAttribute__ctor_m7990542BCC882B8960A3B61CCAAD6D3024438B52 (ArrayElementTitleAttribute_t95859242D0591D1454C3778E09A76713CB83BDA0* __this, String_t* ___0_elementTitleVar, String_t* ___1_fallbackName, const RuntimeMethod* method) 
 {
 	{
@@ -222,7 +222,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void ArrayElementTitleAttribute__ctor_m799054
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 133885
+// Method Definition Index: 133957
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR DateTime_t66193957C73913903DDAD89FEDC46139BCA5802D DateTimeUtility_get_UtcNow_m45B39BA40DBE9DB6D4E96FA5C71A4AE49D6F71E2 (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -239,7 +239,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR DateTime_t66193957C73913903DDAD89FEDC46139BCA
 		return L_0;
 	}
 }
-// Method Definition Index: 133886
+// Method Definition Index: 133958
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR int64_t DateTimeUtility_get_ElapsedMilliseconds_mFCCD79CB27652B45BB76D679824C381809226602 (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -261,7 +261,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR int64_t DateTimeUtility_get_ElapsedMillisecon
 		return ((int64_t)(L_1/((int64_t)((int32_t)10000))));
 	}
 }
-// Method Definition Index: 133887
+// Method Definition Index: 133959
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DateTimeUtility__ctor_m13105FFC88652B794CAFB4919D2B999178A6C946 (DateTimeUtility_t3DC2607E7F54B1B6BC7A35132C9AC23256CB57C4* __this, const RuntimeMethod* method) 
 {
 	//<source_info:<no-source>:1>
@@ -278,7 +278,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void DateTimeUtility__ctor_m13105FFC88652B794
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #endif
-// Method Definition Index: 133904
+// Method Definition Index: 133976
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_IsUsingPlatformIntegration_mD9EC5E5EB8484758F9EA7C4AB77B3C2401030325 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -287,7 +287,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_IsUsingPla
 		return L_0;
 	}
 }
-// Method Definition Index: 133905
+// Method Definition Index: 133977
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_IsUsingPlatformIntegration_m876AF05667EBCFCC3D9F5CF4AF25AE6ABCF41E97 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, bool ___0_value, const RuntimeMethod* method) 
 {
 	{
@@ -297,7 +297,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_IsUsingPla
 		return;
 	}
 }
-// Method Definition Index: 133906
+// Method Definition Index: 133978
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_WitApplication_m6D645BA4007F4C5BE5AAC187E1933C914E10C8B3 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -306,7 +306,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_WitAp
 		return L_0;
 	}
 }
-// Method Definition Index: 133907
+// Method Definition Index: 133979
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_WitApplication_m90F2C396FE8F236EB9DACB3AAB1A421C0EE0C6F1 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, String_t* ___0_value, const RuntimeMethod* method) 
 {
 	{
@@ -317,7 +317,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_WitApplica
 		return;
 	}
 }
-// Method Definition Index: 133908
+// Method Definition Index: 133980
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_PackageName_m9FEFFA106337BF62FCEB8945BA22EE439AFA7552 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -326,7 +326,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_Packa
 		return L_0;
 	}
 }
-// Method Definition Index: 133909
+// Method Definition Index: 133981
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_ShouldLogToConsole_m4D45C67EF5CD56C8BC8F06C6C7FB31AEE960B463 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -335,7 +335,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_ShouldLogT
 		return L_0;
 	}
 }
-// Method Definition Index: 133910
+// Method Definition Index: 133982
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_ShouldLogToConsole_m5AED016486F14274253E0B46362531EFECDD5726 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, bool ___0_value, const RuntimeMethod* method) 
 {
 	{
@@ -345,7 +345,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_set_ShouldLogT
 		return;
 	}
 }
-// Method Definition Index: 133911
+// Method Definition Index: 133983
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_RequiresCleanup_m5CC6C6A7173E199EE35C5849CAF3CB0B2FEC45FA (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -353,7 +353,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_RequiresCl
 		return (bool)0;
 	}
 }
-// Method Definition Index: 133912
+// Method Definition Index: 133984
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl__ctor_m23702E026CC9965257C14E48CC5A22084EBA6A6D (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -368,7 +368,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl__ctor_m23702E0
 		return;
 	}
 }
-// Method Definition Index: 133913
+// Method Definition Index: 133985
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogInteractionStart_m26108DBD0704DE28B70DA663566069CF1297B50D (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, String_t* ___0_requestId, String_t* ___1_witApi, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -444,7 +444,7 @@ IL_0009:
 		return;
 	}
 }
-// Method Definition Index: 133914
+// Method Definition Index: 133986
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogInteractionEndSuccess_mDF65FD2FC716D13F935943891AE899145D1A1361 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -494,7 +494,7 @@ IL_0009:
 		return;
 	}
 }
-// Method Definition Index: 133915
+// Method Definition Index: 133987
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogInteractionEndFailure_mBF0953BD4D37F241EE5EF3B6F957BB8C7C624283 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, String_t* ___0_errorMessage, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -545,7 +545,7 @@ IL_0009:
 		return;
 	}
 }
-// Method Definition Index: 133916
+// Method Definition Index: 133988
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogInteractionPoint_mEE073AF2DA38C14A4C3175BB161D131D6514B185 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, String_t* ___0_interactionPoint, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -615,7 +615,7 @@ IL_0009:
 		return;
 	}
 }
-// Method Definition Index: 133917
+// Method Definition Index: 133989
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogAnnotation_m10806011D78726CEC0FA7888D2C21279FC7230C9 (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, String_t* ___0_annotationKey, String_t* ___1_annotationValue, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -673,7 +673,7 @@ IL_0009:
 		return;
 	}
 }
-// Method Definition Index: 133918
+// Method Definition Index: 133990
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl_LogFirstTranscriptionTime_m19D03CF21A8DF1B17F282253AD11E21BD846F97E (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -703,7 +703,7 @@ IL_001a:
 		return;
 	}
 }
-// Method Definition Index: 133919
+// Method Definition Index: 133991
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl__cctor_m67035F85CEEF68A1066E4519BC4CAE0203B42771 (const RuntimeMethod* method) 
 {
 	static bool s_Il2CppMethodInitialized;
@@ -723,7 +723,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void VoiceSDKConsoleLoggerImpl__cctor_m67035F
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-// Method Definition Index: 133909
+// Method Definition Index: 133981
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_get_ShouldLogToConsole_m4D45C67EF5CD56C8BC8F06C6C7FB31AEE960B463_inline (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -732,7 +732,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR bool VoiceSDKConsoleLoggerImpl_ge
 		return L_0;
 	}
 }
-// Method Definition Index: 133906
+// Method Definition Index: 133978
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_WitApplication_m6D645BA4007F4C5BE5AAC187E1933C914E10C8B3_inline (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{
@@ -741,7 +741,7 @@ IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerIm
 		return L_0;
 	}
 }
-// Method Definition Index: 133908
+// Method Definition Index: 133980
 IL2CPP_MANAGED_FORCE_INLINE IL2CPP_METHOD_ATTR String_t* VoiceSDKConsoleLoggerImpl_get_PackageName_m9FEFFA106337BF62FCEB8945BA22EE439AFA7552_inline (VoiceSDKConsoleLoggerImpl_tD830A3FDBCDEFAA68417E5F31BFB7B875818F59B* __this, const RuntimeMethod* method) 
 {
 	{

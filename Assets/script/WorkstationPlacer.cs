@@ -55,6 +55,15 @@ public class WorkstationPlacer : MonoBehaviour
     private float yaw;
     private bool panelInitialized;
 
+    // À appeler quand la forme du dessous a changé (ex. moteur retourné) :
+    // le prochain placement posera le nouveau dessous du bloc sur la table.
+    public void RecomputeBottom()
+    {
+        if (baseRenderer == null) return;
+        Bounds b = baseRenderer.bounds;
+        localBottomCenter = poste.InverseTransformPoint(new Vector3(b.center.x, b.min.y, b.center.z));
+    }
+
     void Awake()
     {
         if (poste == null) poste = transform;
@@ -117,8 +126,11 @@ public class WorkstationPlacer : MonoBehaviour
                 break;
 
             case State.Ajustement:
-                float x = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, controller).x;
-                if (Mathf.Abs(x) > 0.2f)
+                // Les deux joysticks fonctionnent (gauche ou droite), avec une petite zone morte.
+                float x = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.RTouch).x
+                        + OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.LTouch).x;
+                x = Mathf.Clamp(x, -1f, 1f);
+                if (Mathf.Abs(x) > 0.12f)
                 {
                     yaw += x * rotationSpeed * Time.deltaTime;
                     Apply();

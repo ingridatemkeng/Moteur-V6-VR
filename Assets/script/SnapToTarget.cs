@@ -71,6 +71,9 @@ public class SnapToTarget : MonoBehaviour
     public UnityEvent onWrongPiece;          // posée sur l'emplacement d'une AUTRE sorte de pièce
 
     public bool IsPlaced => isPlaced;
+    // Écarts mesurés au dernier relâchement (utilisés par le journal de session).
+    public float LastDistance { get; private set; }
+    public float LastAngle { get; private set; }
 
     private Rigidbody rb;
     private bool isPlaced = false;
@@ -167,6 +170,8 @@ public class SnapToTarget : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, target.position);
         float angle = OrientationError();
+        LastDistance = distance;
+        LastAngle = angle;
 
         // Cas 1 : bon endroit ET bonne orientation -> montage correct
         if (distance <= positionTolerance && angle <= angleTolerance)

@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using TMPro;
 
 // À placer sur chaque élément à serrer : vis CHC (clé Allen) ou écrou (clé à douille).
-// Serrage symbolique en deux phases : au COUPLE (jauge) puis à l'ANGLE (compteur).
+// Serrage symbolique au COUPLE (jauge), suivi en option d'un serrage à l'ANGLE (case Angle Step).
 // L'écrou est une cible d'outil (ToolTarget) : il attend une clé dynamométrique (champ Required Tool).
 // La rotation vient de l'outil engagé. Effet cliquet : seule la rotation dans le sens du serrage
 // compte, et elle s'additionne d'une prise en main à l'autre.
@@ -15,9 +15,11 @@ public class NutTightening : ToolTarget
 
     [Header("Consignes (issues de la séquence de montage)")]
     [Tooltip("Couple attendu pour CET écrou (N·m). La clé, elle, clique à la valeur réglée par l'apprenant.")]
-    public float targetTorque = 35f;          // N·m
+    public float targetTorque = 25f;          // N·m (gamme : env. 25 N·m pour les vis CHC de bielle)
     public float torqueTolerance = 2f;        // ± N·m
     public float degreesToReachTorque = 180f; // rotation nécessaire pour atteindre le couple cible
+    [Tooltip("Coché : après le couple, un serrage angulaire est demandé. Décoché (gamme actuelle) : la vis est terminée dès que le couple est validé.")]
+    public bool angleStep = false;
     public float targetAngle = 90f;           // degrés
     public float angleTolerance = 10f;        // ± degrés
 
@@ -239,7 +241,7 @@ public class NutTightening : ToolTarget
                 }
                 else Log("couple validé (" + CurrentTorque.ToString("F1") + " N·m).");
 
-                CurrentPhase = Phase.Angle;
+                CurrentPhase = angleStep ? Phase.Angle : Phase.Termine;
                 overWarned = false;   // on repart à zéro pour la phase angulaire
                 onTorqueValidated.Invoke();
                 if (group != null) group.NotifyChanged();
