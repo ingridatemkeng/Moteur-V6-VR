@@ -2,27 +2,27 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-// Tutoriel contextuel : les explications apparaissent au fur et à mesure que l'utilisateur avance dans le montage.
-// - Une consigne d'étape toujours affichée (« Étape 3/9 : posez l'axe de piston »).
-// - Des astuces affichées UNE seule fois, la première fois qu'une situation se présente
-//   (première pièce attrapée, première erreur d'orientation, premier clic de serrage...).
-// Les messages s'affichent sur le panneau de consignes (le même que celui de l'écran d'accueil).
+// Tutoriel contextuel : les explications apparaissent au fur et Ã  mesure que l'utilisateur avance dans le montage.
+// - Une consigne d'Ã©tape toujours affichÃ©e (Â« Ã‰tape 3/9 : posez l'axe de piston Â»).
+// - Des astuces affichÃ©es UNE seule fois, la premiÃ¨re fois qu'une situation se prÃ©sente
+//   (premiÃ¨re piÃ¨ce attrapÃ©e, premiÃ¨re erreur d'orientation, premier clic de serrage...).
+// Les messages s'affichent sur le panneau de consignes (le mÃªme que celui de l'Ã©cran d'accueil).
 //
-// À placer sur un objet de la scène (ex. « Tutoriel »). Il trouve tout seul les pièces et les outils.
+// Ã€ placer sur un objet de la scÃ¨ne (ex. Â« Tutoriel Â»). Il trouve tout seul les piÃ¨ces et les outils.
 
 public class TutorialGuide : MonoBehaviour
 {
-    [Header("Références")]
+    [Header("RÃ©fÃ©rences")]
     [Tooltip("Le panneau de consignes (Text_instruction_affichage).")]
     public TMP_Text panel;
     public WorkstationPlacer placer;
     public GhostSequence sequence;
     public TighteningGroup tighteningGroup;
 
-    [Header("Réglages")]
-    [Tooltip("Décocher pour un utilisateur expérimenté ou pour le mode Évaluation : seules les consignes d'étape restent.")]
+    [Header("RÃ©glages")]
+    [Tooltip("DÃ©cocher pour un utilisateur expÃ©rimentÃ© ou pour le mode Ã‰valuation : seules les consignes d'Ã©tape restent.")]
     public bool showHints = true;
-    [Tooltip("Durée d'affichage d'une astuce (s) avant de revenir à la consigne d'étape.")]
+    [Tooltip("DurÃ©e d'affichage d'une astuce (s) avant de revenir Ã  la consigne d'Ã©tape.")]
     public float hintDuration = 7f;
 
     private string stepText = "";
@@ -30,12 +30,12 @@ public class TutorialGuide : MonoBehaviour
     private float hintUntil;
     private readonly HashSet<string> shown = new HashSet<string>();
 
-    // Prévient le journal de session qu'une astuce vient d'être affichée (clé de l'astuce).
+    // PrÃ©vient le journal de session qu'une astuce vient d'Ãªtre affichÃ©e (clÃ© de l'astuce).
     public static event System.Action<string> HintShown;
 
     void Start()
     {
-        // « Include » : le contenu du poste est masqué au démarrage, il faut quand même le trouver.
+        // Â« Include Â» : le contenu du poste est masquÃ© au dÃ©marrage, il faut quand mÃªme le trouver.
         if (placer == null) placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
         if (sequence == null) sequence = FindFirstObjectByType<GhostSequence>(FindObjectsInactive.Include);
         if (tighteningGroup == null) tighteningGroup = FindFirstObjectByType<TighteningGroup>(FindObjectsInactive.Include);
@@ -43,28 +43,28 @@ public class TutorialGuide : MonoBehaviour
 
         int pieces = FindObjectsByType<SnapToTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
         int tools = FindObjectsByType<Tool>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
-        Debug.Log("[Tuto] démarrage : panneau " + (panel != null ? panel.name : "INTROUVABLE")
+        Debug.Log("[Tuto] dÃ©marrage : panneau " + (panel != null ? panel.name : "INTROUVABLE")
                   + ", poste " + (placer != null ? "ok" : "INTROUVABLE")
-                  + ", séquence " + (sequence != null ? "ok" : "absente")
+                  + ", sÃ©quence " + (sequence != null ? "ok" : "absente")
                   + ", serrage " + (tighteningGroup != null ? "ok" : "absent")
-                  + ", " + pieces + " pièces, " + tools + " outils.");
+                  + ", " + pieces + " piÃ¨ces, " + tools + " outils.");
 
         if (placer != null) placer.onPlacementConfirmed.AddListener(OnPlacementConfirmed);
         if (sequence != null) sequence.StepChanged += OnStepChanged;
 
-        // Toutes les pièces à poser (y compris celles désactivées au démarrage).
+        // Toutes les piÃ¨ces Ã  poser (y compris celles dÃ©sactivÃ©es au dÃ©marrage).
         foreach (var piece in FindObjectsByType<SnapToTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             piece.onGrab.AddListener(() => Hint("grab",
-                "Le fantôme transparent montre où va la pièce.\nPlacez-la dessus, dans la même orientation,\npuis relâchez la gâchette."));
+                "Le fantÃ´me transparent montre oÃ¹ va la piÃ¨ce.\nPlacez-la dessus, dans la mÃªme orientation,\npuis relÃ¢chez la gÃ¢chette."));
             piece.onWrongOrientation.AddListener(() => Hint("orientation",
-                "Bon endroit, mais mauvaise orientation :\ntournez la pièce pour qu'elle épouse le fantôme.\nLa console (manette gauche) indique l'écart en degrés."));
+                "Bon endroit, mais mauvaise orientation :\ntournez la piÃ¨ce pour qu'elle Ã©pouse le fantÃ´me.\nLa console (manette gauche) indique l'Ã©cart en degrÃ©s."));
             piece.onWrongPlace.AddListener(() => Hint("place",
-                "Pas encore au bon endroit :\namenez la pièce sur le fantôme avant de la relâcher."));
+                "Pas encore au bon endroit :\namenez la piÃ¨ce sur le fantÃ´me avant de la relÃ¢cher."));
             piece.onWrongPiece.AddListener(() => Hint("wrong-piece",
-                "Mauvaise pièce : cet emplacement en attend une autre.\nRegardez le fantôme : il a la forme de la pièce attendue."));
+                "Mauvaise piÃ¨ce : cet emplacement en attend une autre.\nRegardez le fantÃ´me : il a la forme de la piÃ¨ce attendue."));
             piece.onSnapped.AddListener(() => Hint("snap",
-                "Bravo, la pièce est en place et verrouillée.\nLe fantôme suivant indique la prochaine pièce."));
+                "Bravo, la piÃ¨ce est en place et verrouillÃ©e.\nLe fantÃ´me suivant indique la prochaine piÃ¨ce."));
         }
 
         // Outils.
@@ -74,12 +74,12 @@ public class TutorialGuide : MonoBehaviour
             t.onGrabbed.AddListener(() =>
             {
                 if (tighteningGroup != null && !TighteningActive()) Hint("tool-early",
-                    "Cet outil servira au serrage.\nPosez d'abord toutes les pièces.");
+                    "Cet outil servira au serrage.\nPosez d'abord toutes les piÃ¨ces.");
                 else Hint("tool-grab",
-                    "Approchez le bout de l'outil de la tête d'une vis :\nil s'y engage tout seul.");
+                    "Approchez le bout de l'outil de la tÃªte d'une vis :\nil s'y engage tout seul.");
             });
             t.onEngaged.AddListener(() => Hint("engaged",
-                "La clé est dans la vis. Faites pivoter le manche\ndans le sens du vissage (aiguilles d'une montre).\nVous pouvez la lâcher : elle reste dans la vis.\nPour la retirer, attrapez-la et tirez-la\ndans l'axe de la vis, vers l'extérieur."));
+                "La clÃ© est dans la vis. Faites pivoter le manche\ndans le sens du vissage (aiguilles d'une montre).\nVous pouvez la lÃ¢cher : elle reste dans la vis.\nPour la retirer, attrapez-la et tirez-la\ndans l'axe de la vis, vers l'extÃ©rieur."));
             t.onWrongTool.AddListener(() => Hint("wrong-tool",
                 "Ce n'est pas le bon outil (voir la console).\nReposez-le et prenez " + ExpectedToolText() + "."));
         }
@@ -88,30 +88,30 @@ public class TutorialGuide : MonoBehaviour
         if (tighteningGroup != null)
         {
             tighteningGroup.onActivated.AddListener(() =>
-                SetStep("Serrage : prenez " + ExpectedToolText() + " sur l'établi\net serrez chaque vis au couple."));
+                SetStep("Serrage : prenez " + ExpectedToolText() + " sur l'Ã©tabli\net serrez chaque vis au couple."));
             bool hasFlipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include) != null;
             tighteningGroup.onAllTightened.AddListener(() =>
-                SetStep("Montage terminé, bravo !\nL'ensemble piston-bielle est monté et serré."
+                SetStep("Montage terminÃ©, bravo !\nL'ensemble piston-bielle est montÃ© et serrÃ©."
                         + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : "")));
 
             foreach (var f in tighteningGroup.fasteners)
             {
                 if (f == null) continue;
                 f.onTorqueWindowEntered.AddListener(() => Hint("click",
-                    "Clic ! Le couple est atteint : relâchez la gâchette.\nPassez ensuite à l'autre vis."));
+                    "Clic ! Le couple est atteint : relÃ¢chez la gÃ¢chette.\nPassez ensuite Ã  l'autre vis."));
                 f.onTorqueValidated.AddListener(() =>
                 {
                     if (f.angleStep && tighteningGroup.AllTorqued())
                         SetStep("Toutes les vis sont au couple.\nSerrage angulaire : tournez chaque vis de "
-                                + f.targetAngle.ToString("F0") + "° de plus.");
+                                + f.targetAngle.ToString("F0") + "Â° de plus.");
                 });
-                f.onAngleReached.AddListener(() => Hint("angle", "Angle atteint : relâchez la gâchette."));
+                f.onAngleReached.AddListener(() => Hint("angle", "Angle atteint : relÃ¢chez la gÃ¢chette."));
                 f.onOutOfSequence.AddListener(() => Hint("sequence",
                     "Ordre de serrage : mettez d'abord TOUTES les vis au couple,\navant le serrage angulaire."));
                 f.onOverTightened.AddListener(() => Hint("over",
-                    "Sur-serrage : relâchez dès que vous sentez\nla vibration du clic."));
+                    "Sur-serrage : relÃ¢chez dÃ¨s que vous sentez\nla vibration du clic."));
                 f.onUnderTightened.AddListener(() => Hint("under",
-                    "Couple insuffisant : vérifiez le réglage de la clé\npuis reprenez le serrage."));
+                    "Couple insuffisant : vÃ©rifiez le rÃ©glage de la clÃ©\npuis reprenez le serrage."));
             }
         }
     }
@@ -121,22 +121,22 @@ public class TutorialGuide : MonoBehaviour
         if (sequence != null) sequence.StepChanged -= OnStepChanged;
     }
 
-    // ---------- Déroulé ----------
+    // ---------- DÃ©roulÃ© ----------
 
     private void OnPlacementConfirmed()
     {
-        Debug.Log("[Tuto] poste verrouillé : le tutoriel commence.");
+        Debug.Log("[Tuto] poste verrouillÃ© : le tutoriel commence.");
         if (sequence != null && sequence.Current != null)
             OnStepChanged(sequence.Current, sequence.CurrentIndex, sequence.Count);
         Hint("start",
-            "Les pièces sont posées à côté du moteur.\nAttrapez-les avec la gâchette avant ou latérale.\nSuivez le fantôme transparent.");
+            "Les piÃ¨ces sont posÃ©es Ã  cÃ´tÃ© du moteur.\nAttrapez-les avec la gÃ¢chette avant ou latÃ©rale.\nSuivez le fantÃ´me transparent.");
     }
 
     private void OnStepChanged(SnapToTarget piece, int index, int count)
     {
-        if (piece == null) return;   // tout est posé : c'est le serrage qui prend la suite
+        if (piece == null) return;   // tout est posÃ© : c'est le serrage qui prend la suite
         string advice = Advice(piece.name);
-        SetStep("Étape " + (index + 1) + "/" + count + " : posez " + FriendlyName(piece.name) + "."
+        SetStep("Ã‰tape " + (index + 1) + "/" + count + " : posez " + FriendlyName(piece.name) + "."
                 + (string.IsNullOrEmpty(advice) ? "" : "\n" + advice));
     }
 
@@ -152,21 +152,23 @@ public class TutorialGuide : MonoBehaviour
         if (tighteningGroup != null)
             foreach (var f in tighteningGroup.fasteners)
                 if (f != null) return ToolNames.WithArticle(f.requiredTool);
-        return "l'outil adapté";
+        return "l'outil adaptÃ©";
     }
 
-    // ---------- Noms et conseils des pièces ----------
+    // ---------- Noms et conseils des piÃ¨ces ----------
 
     private static string FriendlyName(string n)
     {
         string s = n.ToLowerInvariant();
+        if (s.Contains("bushing") || s.Contains("bague")) return "une bague-palier";
+        if (s.StartsWith("em_")) return "l'ensemble piston-bielle " + n.Substring(3).ToUpperInvariant();
         if (s.Contains("crank")) return "le vilebrequin";
         if (s.Contains("cap_rod") || s.Contains("cap rod")) return "le chapeau de bielle";
         if (s.Contains("piston_pin")) return "l'axe de piston";
         if (s.Contains("piston_rod")) return "la bielle";
         if (s.Contains("piston_head")) return "le piston";
         if (s.Contains("screw")) return "une vis CHC";
-        if (s.Contains("nut")) return "un écrou";
+        if (s.Contains("nut")) return "un Ã©crou";
         if (s.Contains("oil_pan")) return "le carter d'huile";
         return n;
     }
@@ -174,12 +176,15 @@ public class TutorialGuide : MonoBehaviour
     private static string Advice(string n)
     {
         string s = n.ToLowerInvariant();
-        if (s.Contains("crank")) return "Il se pose dans les paliers, en bas du bloc.";
-        if (s.Contains("cap_rod") || s.Contains("cap rod")) return "Respectez son sens : il se remonte comme il était sur la bielle.";
-        if (s.Contains("piston_pin")) return "L'axe peut tourner sur lui-même : seule sa direction compte.";
+        if (s.Contains("bushing") || s.Contains("bague")) return "Elle se place Ã  une extrÃ©mitÃ© du vilebrequin,\nen appui sur son Ã©paulement.";
+        if (s.StartsWith("em_")) return "Chaque ensemble va dans SON cylindre :\nvÃ©rifiez le repÃ¨re avant de le poser.";
+        if (s.Contains("oil_pan")) return "Il ferme le bas du bloc et maintient le vilebrequin.";
+        if (s.Contains("crank")) return "Flasque de poulie vers l'avant du moteur.";
+        if (s.Contains("cap_rod") || s.Contains("cap rod")) return "Respectez son sens : il se remonte comme il Ã©tait sur la bielle.";
+        if (s.Contains("piston_pin")) return "L'axe peut tourner sur lui-mÃªme : seule sa direction compte.";
         if (s.Contains("piston_head")) return "Attention au sens de montage du piston.";
-        if (s.Contains("screw")) return "La vis traverse la bielle et le chapeau, tête du bon côté.";
-        if (s.Contains("nut")) return "L'écrou se place au bout de la vis.";
+        if (s.Contains("screw")) return "La vis traverse la bielle et le chapeau, tÃªte du bon cÃ´tÃ©.";
+        if (s.Contains("nut")) return "L'Ã©crou se place au bout de la vis.";
         return "";
     }
 
@@ -193,7 +198,7 @@ public class TutorialGuide : MonoBehaviour
 
     private void Hint(string key, string text)
     {
-        if (!showHints) { Debug.Log("[Tuto] astuces désactivées (Show Hints décoché)."); return; }
+        if (!showHints) { Debug.Log("[Tuto] astuces dÃ©sactivÃ©es (Show Hints dÃ©cochÃ©)."); return; }
         if (shown.Contains(key)) return;
         shown.Add(key);
         hintText = text;
@@ -219,6 +224,6 @@ public class TutorialGuide : MonoBehaviour
         if (placer != null && placer.CurrentState != WorkstationPlacer.State.Verrouille) return;
         if (!panel.gameObject.activeInHierarchy) panel.gameObject.SetActive(true);
         panel.text = text;
-        if (text != "") Debug.Log("[Tuto] affiché : " + text.Replace("\n", " "));
+        if (text != "") Debug.Log("[Tuto] affichÃ© : " + text.Replace("\n", " "));
     }
 }
