@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -6,6 +7,8 @@ using UnityEngine.Serialization;
 // - Le serrage ne devient possible que quand TOUTES les pièces préalables sont bien posées
 //   (chapeau de bielle, vis CHC, écrous) : c'est une contrainte de précédence.
 // - Vérifie l'ordre de serrage : toutes les vis pré-serrées au couple avant tout serrage angulaire.
+// - Option « serrage en croix » (carter, culasse) : après une vis, la suivante doit être la vis opposée.
+// Il peut y avoir plusieurs groupes dans la scène (bielle, carter...) : un objet par groupe.
 
 public class TighteningGroup : MonoBehaviour
 {
@@ -20,6 +23,12 @@ public class TighteningGroup : MonoBehaviour
     [Header("Optionnel : objets masqués jusqu'à l'activation (laisser VIDE si la visserie se pose à la main)")]
     public GameObject[] showOnActivate;
 
+    [Header("Ordre de serrage")]
+    [Tooltip("Coché : serrage en croix. Après une vis, la suivante doit être la vis opposée (la plus éloignée de celle qu'on vient de serrer).")]
+    public bool crossPattern = false;
+    [Tooltip("Nom affiché par le tutoriel (ex. « du carter », « des bielles »). Vide = rien.")]
+    public string displayName = "";
+
     [Header("Mode")]
     [Tooltip("Décoché = Apprentissage (on bloque l'action hors ordre). Coché = Évaluation (on laisse faire et on enregistre l'erreur).")]
     public bool modeEvaluation = false;
@@ -29,6 +38,10 @@ public class TighteningGroup : MonoBehaviour
 
     private bool activated;
     private bool finished;
+    private readonly List<NutTightening> order = new List<NutTightening>();   // vis déjà au couple, dans l'ordre
+
+    public bool IsActivated => activated;
+    public bool IsFinished => finished;
 
     void Awake()
     {
@@ -65,6 +78,36 @@ public class TighteningGroup : MonoBehaviour
             if (f != null && (f.CurrentPhase == NutTightening.Phase.Inactif || f.CurrentPhase == NutTightening.Phase.Couple))
                 return false;
         return true;
+    }
+
+    // Appelé par une vis quand son couple vient d'être validé : on retient l'ordre.
+    public void NotifyTorqued(NutTightening f)
+    {
+        if (f != null && !order.Contains(f)) order.Add(f);
+    }
+
+    // Serrage en croix : la vis attendue maintenant (null = n'importe laquelle).
+    // Règle : les vis vont par paires opposées. Après la 1re (ou la 3e...) vis,
+    // la suivante est celle qui est la plus éloignée de la vis qu'on vient de serrer.
+    public NutTightening ExpectedNext()
+    {
+        if (!crossPattern || order.Count % 2 == 0) return null;
+        NutTightening last = order[order.Count - 1];
+        NutTightening best = null;
+        float bestDistance = -1f;
+        foreach (var f in fasteners)
+        {
+            if (f == null || f == last || order.Contains(f)) continue;
+            float d = Vector3.Distance(f.WorkPoint, last.WorkPoint);
+            if (d > bestDistance) { bestDistance = d; best = f; }
+        }
+        return best;
+    }
+
+    public bool IsInOrder(NutTightening f)
+    {
+        NutTightening expected = ExpectedNext();
+        return expected == null || expected == f;
     }
 
     public void NotifyChanged()

@@ -121,7 +121,7 @@ public class SessionLogger : MonoBehaviour
             TighteningGroup group = g;
             group.onActivated.AddListener(() => StartCoroutine(NextFrame(() =>
             {
-                NewStep(sequence != null ? sequence.Count : stepIndex + 1, "serrage");
+                NewStep(stepIndex, "serrage_" + group.name);
                 Write("serrage_disponible", group.name, "", "");
             })));
             group.onAllTightened.AddListener(() => Write("serrage_termine", group.name, "", ""));

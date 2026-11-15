@@ -4,74 +4,74 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
 
-// À placer sur une pièce attrapable (ex. piston_head).
-// Au relâchement, vérifie si la pièce est posée à la bonne POSITION et dans la bonne ORIENTATION.
-// C'est la brique de base de l'emboîtement ET de la détection d'erreurs.
-// V3 : le fantôme (cible) disparaît quand la pièce est bien placée, et RÉAPPARAÎT si on la retire.
+// Ã€ placer sur une piÃ¨ce attrapable (ex. piston_head).
+// Au relÃ¢chement, vÃ©rifie si la piÃ¨ce est posÃ©e Ã  la bonne POSITION et dans la bonne ORIENTATION.
+// C'est la brique de base de l'emboÃ®tement ET de la dÃ©tection d'erreurs.
+// V3 : le fantÃ´me (cible) disparaÃ®t quand la piÃ¨ce est bien placÃ©e, et RÃ‰APPARAÃŽT si on la retire.
 //
-// Câblage (PointableUnityEventWrapper de la pièce) :
+// CÃ¢blage (PointableUnityEventWrapper de la piÃ¨ce) :
 //   When Select   -> SnapToTarget.OnGrabbed()
 //   When Unselect -> SnapToTarget.CheckSnap()
 
 public class SnapToTarget : MonoBehaviour
 {
-    [Header("Cible (pose assemblée correcte)")]
-    public Transform target;                 // le fantôme placé à la position/orientation finale
+    [Header("Cible (pose assemblÃ©e correcte)")]
+    public Transform target;                 // le fantÃ´me placÃ© Ã  la position/orientation finale
 
-    [Header("Tolérances")]
+    [Header("TolÃ©rances")]
     public float positionTolerance = 0.03f;  // 3 cm
-    public float angleTolerance = 15f;       // 15 degrés
+    public float angleTolerance = 15f;       // 15 degrÃ©s
 
     public enum Symmetry
     {
-        Aucune,                 // la rotation complète compte (piston, bielle, chapeau, vilebrequin)
-        RotationAutourAxe,      // la pièce peut tourner librement autour de son axe
-        AxeEtRetournement       // idem, et elle peut aussi être montée retournée bout pour bout (axe de piston)
+        Aucune,                 // la rotation complÃ¨te compte (piston, bielle, chapeau, vilebrequin)
+        RotationAutourAxe,      // la piÃ¨ce peut tourner librement autour de son axe
+        AxeEtRetournement       // idem, et elle peut aussi Ãªtre montÃ©e retournÃ©e bout pour bout (axe de piston)
     }
 
-    [Header("Symétrie (pièces cylindriques)")]
-    [Tooltip("Aucune = rotation complète vérifiée. Pour piston_pin : Axe Et Retournement.")]
+    [Header("SymÃ©trie (piÃ¨ces cylindriques)")]
+    [Tooltip("Aucune = rotation complÃ¨te vÃ©rifiÃ©e. Pour piston_pin : Axe Et Retournement.")]
     public Symmetry symmetry = Symmetry.Aucune;
     public enum AxisShape { PlusLongue, PlusFine }
-    [Tooltip("Coché : l'axe de symétrie est trouvé automatiquement à partir de la forme de la pièce.")]
+    [Tooltip("CochÃ© : l'axe de symÃ©trie est trouvÃ© automatiquement Ã  partir de la forme de la piÃ¨ce.")]
     public bool autoDetectSymmetryAxis = true;
-    [Tooltip("Plus Longue : vis, axe de piston (l'axe suit la longueur). Plus Fine : écrou, rondelle (l'axe traverse l'épaisseur).")]
+    [Tooltip("Plus Longue : vis, axe de piston (l'axe suit la longueur). Plus Fine : Ã©crou, rondelle (l'axe traverse l'Ã©paisseur).")]
     public AxisShape symmetryAxisShape = AxisShape.PlusLongue;
-    [Tooltip("Axe de symétrie dans le repère LOCAL de la pièce : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
+    [Tooltip("Axe de symÃ©trie dans le repÃ¨re LOCAL de la piÃ¨ce : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
     public Vector3 symmetryAxis = Vector3.up;
 
-    [Header("Pièces identiques (vis, écrous, pistons...)")]
-    [Tooltip("Coché : une pièce identique peut aller sur l'emplacement d'une autre (les deux échangent leurs emplacements). À décocher pour les pièces appairées (ex. chapeau de bielle, propre à sa bielle).")]
+    [Header("PiÃ¨ces identiques (vis, Ã©crous, pistons...)")]
+    [Tooltip("CochÃ© : une piÃ¨ce identique peut aller sur l'emplacement d'une autre (les deux Ã©changent leurs emplacements). Ã€ dÃ©cocher pour les piÃ¨ces appairÃ©es (ex. chapeau de bielle, propre Ã  sa bielle).")]
     public bool interchangeable = true;
-    [Tooltip("Famille de la pièce. Vide = déduite du nom (« hex nut… » et « hex nut….001 » sont de la même famille).")]
+    [Tooltip("Famille de la piÃ¨ce. Vide = dÃ©duite du nom (Â« hex nutâ€¦ Â» et Â« hex nutâ€¦.001 Â» sont de la mÃªme famille).")]
     public string partFamily = "";
 
     [Header("Guidage en direct")]
-    [Tooltip("Pendant qu'on tient la pièce près de sa cible, affiche la distance et l'écart d'angle dans la console.")]
+    [Tooltip("Pendant qu'on tient la piÃ¨ce prÃ¨s de sa cible, affiche la distance et l'Ã©cart d'angle dans la console.")]
     public bool liveGuidance = true;
-    [Tooltip("Distance (m) à partir de laquelle le guidage s'affiche.")]
+    [Tooltip("Distance (m) Ã  partir de laquelle le guidage s'affiche.")]
     public float guidanceDistance = 0.10f;
 
-    [Header("Fantôme")]
-    [Tooltip("Masque le fantôme quand la pièce est bien placée, le réaffiche si on la retire.")]
+    [Header("FantÃ´me")]
+    [Tooltip("Masque le fantÃ´me quand la piÃ¨ce est bien placÃ©e, le rÃ©affiche si on la retire.")]
     public bool hideTargetWhenPlaced = true;
 
     [Header("Verrouillage")]
-    [Tooltip("Coché (scénario montage) : une pièce bien posée ne peut plus être déplacée. Décoché : elle peut être retirée.")]
+    [Tooltip("CochÃ© (scÃ©nario montage) : une piÃ¨ce bien posÃ©e ne peut plus Ãªtre dÃ©placÃ©e. DÃ©cochÃ© : elle peut Ãªtre retirÃ©e.")]
     public bool lockWhenPlaced = true;
-    [Tooltip("Facultatif : l'objet de préhension à désactiver. Vide = trouvé automatiquement (enfant dont le nom contient 'GrabInteraction').")]
+    [Tooltip("Facultatif : l'objet de prÃ©hension Ã  dÃ©sactiver. Vide = trouvÃ© automatiquement (enfant dont le nom contient 'GrabInteraction').")]
     public GameObject grabInteraction;
 
-    [Header("Réactions (vibration, texte, guide 3D...)")]
+    [Header("RÃ©actions (vibration, texte, guide 3D...)")]
     public UnityEvent onSnapped;             // montage correct
     public UnityEvent onWrongOrientation;    // bon endroit, mauvaise orientation
     public UnityEvent onWrongPlace;          // pas au bon endroit
-    public UnityEvent onUnsnapped;           // pièce retirée après avoir été bien posée
-    public UnityEvent onGrab;                // pièce attrapée (utilisé par le tutoriel)
-    public UnityEvent onWrongPiece;          // posée sur l'emplacement d'une AUTRE sorte de pièce
+    public UnityEvent onUnsnapped;           // piÃ¨ce retirÃ©e aprÃ¨s avoir Ã©tÃ© bien posÃ©e
+    public UnityEvent onGrab;                // piÃ¨ce attrapÃ©e (utilisÃ© par le tutoriel)
+    public UnityEvent onWrongPiece;          // posÃ©e sur l'emplacement d'une AUTRE sorte de piÃ¨ce
 
     public bool IsPlaced => isPlaced;
-    // Écarts mesurés au dernier relâchement (utilisés par le journal de session).
+    // Ã‰carts mesurÃ©s au dernier relÃ¢chement (utilisÃ©s par le journal de session).
     public float LastDistance { get; private set; }
     public float LastAngle { get; private set; }
 
@@ -80,12 +80,12 @@ public class SnapToTarget : MonoBehaviour
     private bool isHeld = false;
     private float nextGuidanceTime;
 
-    // Toutes les pièces de la scène, pour reconnaître un emplacement occupé par la mauvaise pièce.
+    // Toutes les piÃ¨ces de la scÃ¨ne, pour reconnaÃ®tre un emplacement occupÃ© par la mauvaise piÃ¨ce.
     private static readonly List<SnapToTarget> all = new List<SnapToTarget>();
-    void OnEnable() { if (!all.Contains(this)) all.Add(this); }
+    void OnEnable()  { if (!all.Contains(this)) all.Add(this); }
     void OnDestroy() { all.Remove(this); }
 
-    // Famille : le nom sans les suffixes de copie (« .001 », « (1) », « _Target »...).
+    // Famille : le nom sans les suffixes de copie (Â« .001 Â», Â« (1) Â», Â« _Target Â»...).
     public string Family
     {
         get
@@ -100,7 +100,7 @@ public class SnapToTarget : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        // Recherche automatique de l'enfant de préhension créé par la Quick Action (ISDK_HandGrabInteraction).
+        // Recherche automatique de l'enfant de prÃ©hension crÃ©Ã© par la Quick Action (ISDK_HandGrabInteraction).
         if (grabInteraction == null)
         {
             foreach (Transform child in transform)
@@ -109,7 +109,7 @@ public class SnapToTarget : MonoBehaviour
             }
         }
 
-        // Axe de symétrie trouvé à partir des dimensions du maillage.
+        // Axe de symÃ©trie trouvÃ© Ã  partir des dimensions du maillage.
         if (symmetry != Symmetry.Aucune && autoDetectSymmetryAxis)
         {
             MeshFilter mf = GetComponent<MeshFilter>();
@@ -124,31 +124,31 @@ public class SnapToTarget : MonoBehaviour
         }
     }
 
-    // Guidage en direct : distance et écart d'angle pendant qu'on approche la pièce de sa cible.
+    // Guidage en direct : distance et Ã©cart d'angle pendant qu'on approche la piÃ¨ce de sa cible.
     void Update()
     {
         if (!liveGuidance || !isHeld || isPlaced || target == null || Time.time < nextGuidanceTime) return;
         nextGuidanceTime = Time.time + 0.5f;
 
-        float distance = Vector3.Distance(transform.position, target.position);
+        float distance = Vector3.Distance(Center(transform), Center(target));
         if (distance > guidanceDistance) return;
 
         float angle = OrientationError();
         bool posOk = distance <= positionTolerance;
         bool angOk = angle <= angleTolerance;
-        string verdict = (posOk && angOk) ? "OK, relâchez." : (!angOk ? "tournez la pièce." : "rapprochez-la.");
-        Debug.Log("[Guide] " + name + " : " + (distance * 100f).ToString("F0") + " cm, écart "
-                  + angle.ToString("F0") + "° — " + verdict);
+        string verdict = (posOk && angOk) ? "OK, relÃ¢chez." : (!angOk ? "tournez la piÃ¨ce." : "rapprochez-la.");
+        Debug.Log("[Guide] " + name + " : " + (distance * 100f).ToString("F0") + " cm, Ã©cart "
+                  + angle.ToString("F0") + "Â° â€” " + verdict);
     }
 
-    // Pour un futur scénario (démontage, reprise) : rend la pièce de nouveau attrapable.
+    // Pour un futur scÃ©nario (dÃ©montage, reprise) : rend la piÃ¨ce de nouveau attrapable.
     public void Unlock()
     {
         if (grabInteraction != null) grabInteraction.SetActive(true);
     }
 
-    // À appeler quand on attrape la pièce (When Select).
-    // Si la pièce était posée, on la « désemboîte » : elle redevient à placer et le fantôme réapparaît.
+    // Ã€ appeler quand on attrape la piÃ¨ce (When Select).
+    // Si la piÃ¨ce Ã©tait posÃ©e, on la Â« dÃ©semboÃ®te Â» : elle redevient Ã  placer et le fantÃ´me rÃ©apparaÃ®t.
     public void OnGrabbed()
     {
         isHeld = true;
@@ -157,18 +157,18 @@ public class SnapToTarget : MonoBehaviour
 
         isPlaced = false;
         if (hideTargetWhenPlaced && target != null) target.gameObject.SetActive(true);
-        Debug.Log(name + " : pièce retirée de sa position.");
+        Debug.Log(name + " : piÃ¨ce retirÃ©e de sa position.");
         onUnsnapped.Invoke();
     }
 
-    // À appeler au relâchement de la pièce (When Unselect).
+    // Ã€ appeler au relÃ¢chement de la piÃ¨ce (When Unselect).
     public void CheckSnap()
     {
         isHeld = false;
         Debug.Log(name + " : CheckSnap APPELE");
         if (isPlaced || target == null) return;
 
-        float distance = Vector3.Distance(transform.position, target.position);
+        float distance = Vector3.Distance(Center(transform), Center(target));
         float angle = OrientationError();
         LastDistance = distance;
         LastAngle = angle;
@@ -186,15 +186,15 @@ public class SnapToTarget : MonoBehaviour
             Debug.Log(name + " : montage correct.");
             onSnapped.Invoke();
 
-            // Verrouillage optionnel, à la frame suivante
-            // (pas pendant l'événement de relâchement lui-même, pour éviter les conflits avec l'Interaction SDK).
+            // Verrouillage optionnel, Ã  la frame suivante
+            // (pas pendant l'Ã©vÃ©nement de relÃ¢chement lui-mÃªme, pour Ã©viter les conflits avec l'Interaction SDK).
             if (lockWhenPlaced)
             {
                 if (grabInteraction != null) StartCoroutine(DisableGrabNextFrame());
-                else Debug.LogWarning(name + " : verrouillage impossible, objet de préhension introuvable.");
+                else Debug.LogWarning(name + " : verrouillage impossible, objet de prÃ©hension introuvable.");
             }
         }
-        // Cas 2bis : la pièce est sur l'emplacement d'une AUTRE pièce
+        // Cas 2bis : la piÃ¨ce est sur l'emplacement d'une AUTRE piÃ¨ce
         else if (distance > positionTolerance && CheckOtherSlots()) { }
         // Cas 2 : bon endroit MAIS mauvaise orientation -> erreur d'orientation
         else if (distance <= positionTolerance)
@@ -210,10 +210,10 @@ public class SnapToTarget : MonoBehaviour
         }
     }
 
-    // Vérifie si la pièce a été relâchée sur l'emplacement d'une autre pièce encore libre.
-    // - Même famille et interchangeable : on échange les emplacements, puis on vérifie la pose normalement.
-    // - Autre famille : erreur « mauvaise pièce ».
-    // Renvoie true si la situation a été traitée.
+    // VÃ©rifie si la piÃ¨ce a Ã©tÃ© relÃ¢chÃ©e sur l'emplacement d'une autre piÃ¨ce encore libre.
+    // - MÃªme famille et interchangeable : on Ã©change les emplacements, puis on vÃ©rifie la pose normalement.
+    // - Autre famille : erreur Â« mauvaise piÃ¨ce Â».
+    // Renvoie true si la situation a Ã©tÃ© traitÃ©e.
     private bool CheckOtherSlots()
     {
         SnapToTarget other = null;
@@ -221,37 +221,47 @@ public class SnapToTarget : MonoBehaviour
         foreach (var p in all)
         {
             if (p == this || p == null || p.isPlaced || p.target == null) continue;
-            float d = Vector3.Distance(transform.position, p.target.position);
+            float d = Vector3.Distance(Center(transform), Center(p.target));
             if (d <= best) { best = d; other = p; }
         }
         if (other == null) return false;
 
         if (interchangeable && other.interchangeable && other.Family == Family)
         {
-            // Pièces identiques : chacune prend l'emplacement de l'autre.
+            // PiÃ¨ces identiques : chacune prend l'emplacement de l'autre.
             Transform mine = target;
             target = other.target;
             other.target = mine;
-            Debug.Log(name + " : emplacement de " + other.name + " utilisé (pièces identiques).");
+            Debug.Log(name + " : emplacement de " + other.name + " utilisÃ© (piÃ¨ces identiques).");
             if (!other.target.gameObject.activeSelf && target.gameObject.activeSelf)
             {
-                // On garde l'affichage des fantômes cohérent.
+                // On garde l'affichage des fantÃ´mes cohÃ©rent.
                 other.target.gameObject.SetActive(true);
                 target.gameObject.SetActive(false);
             }
             isHeld = false;
-            CheckSnap();            // nouvelle vérification avec la bonne cible
+            CheckSnap();            // nouvelle vÃ©rification avec la bonne cible
             return true;
         }
 
-        Debug.Log(name + " : MAUVAISE PIÈCE, pas le bon endroit pour elle : cet emplacement attend « " + other.name + " ».");
+        Debug.Log(name + " : MAUVAISE PIÃˆCE, pas le bon endroit pour elle : cet emplacement attend Â« " + other.name + " Â».");
         onWrongPiece.Invoke();
         return true;
     }
 
-    // Écart d'orientation (en degrés) entre la pièce et sa cible, en tenant compte de la symétrie.
-    // Pour une pièce symétrique, on ne compare que la direction de son axe :
-    // la rotation autour de l'axe (et éventuellement le retournement) n'est pas une erreur.
+    // Centre visible d'un objet (centre de son maillage), et non son point de pivot.
+    // Certaines piÃ¨ces exportÃ©es de la CAO ont leur pivot Ã  l'origine du moteur, loin de la piÃ¨ce :
+    // mesurer la distance entre les centres rend la pose indÃ©pendante de l'endroit oÃ¹ se trouve le pivot.
+    // (CalculÃ© Ã  partir du maillage : fonctionne aussi quand le fantÃ´me est masquÃ©.)
+    private static Vector3 Center(Transform t)
+    {
+        MeshFilter mf = t.GetComponent<MeshFilter>();
+        return (mf != null && mf.sharedMesh != null) ? t.TransformPoint(mf.sharedMesh.bounds.center) : t.position;
+    }
+
+    // Ã‰cart d'orientation (en degrÃ©s) entre la piÃ¨ce et sa cible, en tenant compte de la symÃ©trie.
+    // Pour une piÃ¨ce symÃ©trique, on ne compare que la direction de son axe :
+    // la rotation autour de l'axe (et Ã©ventuellement le retournement) n'est pas une erreur.
     private float OrientationError()
     {
         if (symmetry == Symmetry.Aucune)
@@ -271,6 +281,6 @@ public class SnapToTarget : MonoBehaviour
     {
         yield return null;
         grabInteraction.SetActive(false);
-        Debug.Log(name + " : pièce verrouillée.");
+        Debug.Log(name + " : piÃ¨ce verrouillÃ©e.");
     }
 }

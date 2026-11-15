@@ -17,7 +17,9 @@ public class TutorialGuide : MonoBehaviour
     public TMP_Text panel;
     public WorkstationPlacer placer;
     public GhostSequence sequence;
+    [Tooltip("Laisser vide : tous les groupes de serrage de la scène sont trouvés automatiquement.")]
     public TighteningGroup tighteningGroup;
+    private TighteningGroup[] groups = new TighteningGroup[0];
 
     [Header("Réglages")]
     [Tooltip("Décocher pour un utilisateur expérimenté ou pour le mode Évaluation : seules les consignes d'étape restent.")]
@@ -38,7 +40,7 @@ public class TutorialGuide : MonoBehaviour
         // « Include » : le contenu du poste est masqué au démarrage, il faut quand même le trouver.
         if (placer == null) placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
         if (sequence == null) sequence = FindFirstObjectByType<GhostSequence>(FindObjectsInactive.Include);
-        if (tighteningGroup == null) tighteningGroup = FindFirstObjectByType<TighteningGroup>(FindObjectsInactive.Include);
+        groups = FindObjectsByType<TighteningGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         if (panel == null && placer != null) panel = placer.instructions;
 
         int pieces = FindObjectsByType<SnapToTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
@@ -46,7 +48,7 @@ public class TutorialGuide : MonoBehaviour
         Debug.Log("[Tuto] démarrage : panneau " + (panel != null ? panel.name : "INTROUVABLE")
                   + ", poste " + (placer != null ? "ok" : "INTROUVABLE")
                   + ", séquence " + (sequence != null ? "ok" : "absente")
-                  + ", serrage " + (tighteningGroup != null ? "ok" : "absent")
+                  + ", " + groups.Length + " groupe(s) de serrage"
                   + ", " + pieces + " pièces, " + tools + " outils.");
 
         if (placer != null) placer.onPlacementConfirmed.AddListener(OnPlacementConfirmed);
@@ -73,8 +75,9 @@ public class TutorialGuide : MonoBehaviour
             Tool t = tool;
             t.onGrabbed.AddListener(() =>
             {
-                if (tighteningGroup != null && !TighteningActive()) Hint("tool-early",
-                    "Cet outil servira au serrage.\nPosez d'abord toutes les pièces.");
+                if (AllFinished()) return;
+                if (groups.Length > 0 && ActiveGroup() == null) Hint("tool-early",
+                    "Cet outil servira au serrage.\nPosez d'abord les pièces demandées.");
                 else Hint("tool-grab",
                     "Approchez le bout de l'outil de la tête d'une vis :\nil s'y engage tout seul.");
             });
@@ -84,30 +87,43 @@ public class TutorialGuide : MonoBehaviour
                 "Ce n'est pas le bon outil (voir la console).\nReposez-le et prenez " + ExpectedToolText() + "."));
         }
 
-        // Serrage.
-        if (tighteningGroup != null)
+        // Serrage : un ou plusieurs groupes (bielle, carter...).
+        bool hasFlipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include) != null;
+        foreach (var g in groups)
         {
-            tighteningGroup.onActivated.AddListener(() =>
-                SetStep("Serrage : prenez " + ExpectedToolText() + " sur l'établi\net serrez chaque vis au couple."));
-            bool hasFlipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include) != null;
-            tighteningGroup.onAllTightened.AddListener(() =>
-                SetStep("Montage terminé, bravo !\nL'ensemble piston-bielle est monté et serré."
-                        + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : "")));
+            TighteningGroup group = g;
+            group.onActivated.AddListener(() =>
+                SetStep("Serrage" + (string.IsNullOrEmpty(group.displayName) ? "" : " " + group.displayName)
+                        + " : prenez " + ToolText(group) + " sur l'établi\net serrez chaque vis au couple"
+                        + TorqueText(group) + "."
+                        + (group.crossPattern ? "\nSerrez en croix : après une vis, passez à la vis opposée." : "")));
+            group.onAllTightened.AddListener(() =>
+            {
+                // S'il reste des pièces à poser, la consigne de l'étape suivante prend le relais.
+                if (!AllFinished()) return;
+                SetStep("Montage terminé, bravo !\nLe bas moteur est monté et serré."
+                        + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : ""));
+            });
 
-            foreach (var f in tighteningGroup.fasteners)
+            foreach (var f in group.fasteners)
             {
                 if (f == null) continue;
                 f.onTorqueWindowEntered.AddListener(() => Hint("click",
-                    "Clic ! Le couple est atteint : relâchez la gâchette.\nPassez ensuite à l'autre vis."));
+                    "Clic ! Le couple est atteint : relâchez la gâchette.\nPassez ensuite à la vis suivante."));
                 f.onTorqueValidated.AddListener(() =>
                 {
-                    if (f.angleStep && tighteningGroup.AllTorqued())
+                    if (f.angleStep && group.AllTorqued())
                         SetStep("Toutes les vis sont au couple.\nSerrage angulaire : tournez chaque vis de "
                                 + f.targetAngle.ToString("F0") + "° de plus.");
                 });
                 f.onAngleReached.AddListener(() => Hint("angle", "Angle atteint : relâchez la gâchette."));
-                f.onOutOfSequence.AddListener(() => Hint("sequence",
-                    "Ordre de serrage : mettez d'abord TOUTES les vis au couple,\navant le serrage angulaire."));
+                f.onOutOfSequence.AddListener(() =>
+                {
+                    if (group.crossPattern) Hint("sequence-croix",
+                        "Serrage en croix : après une vis,\nserrez la vis OPPOSÉE (en diagonale),\npas sa voisine.");
+                    else Hint("sequence",
+                        "Ordre de serrage : mettez d'abord TOUTES les vis au couple,\navant le serrage angulaire.");
+                });
                 f.onOverTightened.AddListener(() => Hint("over",
                     "Sur-serrage : relâchez dès que vous sentez\nla vibration du clic."));
                 f.onUnderTightened.AddListener(() => Hint("under",
@@ -129,7 +145,7 @@ public class TutorialGuide : MonoBehaviour
         if (sequence != null && sequence.Current != null)
             OnStepChanged(sequence.Current, sequence.CurrentIndex, sequence.Count);
         Hint("start",
-            "Les pièces sont posées à côté du moteur.\nAttrapez-les avec la gâchette avant ou latérale.\nSuivez le fantôme transparent.");
+            "La pièce à prendre est colorée en orange.\nAttrapez-la avec la gâchette avant ou latérale,\npuis posez-la sur le fantôme transparent.");
     }
 
     private void OnStepChanged(SnapToTarget piece, int index, int count)
@@ -140,19 +156,48 @@ public class TutorialGuide : MonoBehaviour
                 + (string.IsNullOrEmpty(advice) ? "" : "\n" + advice));
     }
 
-    private bool TighteningActive()
+    // Le groupe en cours de serrage (activé, pas encore terminé), ou null.
+    private TighteningGroup ActiveGroup()
     {
-        foreach (var f in tighteningGroup.fasteners)
-            if (f != null && f.CurrentPhase != NutTightening.Phase.Inactif) return true;
-        return false;
+        foreach (var g in groups)
+            if (g != null && g.IsActivated && !g.IsFinished) return g;
+        return null;
     }
 
-    private string ExpectedToolText()
+    // Tout est-il fini ? (toutes les pièces posées et tous les serrages terminés)
+    private bool AllFinished()
     {
-        if (tighteningGroup != null)
-            foreach (var f in tighteningGroup.fasteners)
+        if (groups.Length == 0) return false;
+        foreach (var g in groups)
+            if (g != null && !g.IsFinished) return false;
+        if (sequence != null && sequence.steps != null)
+            foreach (var p in sequence.steps)
+                if (p != null && !p.IsPlaced) return false;
+        return true;
+    }
+
+    private static string ToolText(TighteningGroup g)
+    {
+        if (g != null)
+            foreach (var f in g.fasteners)
                 if (f != null) return ToolNames.WithArticle(f.requiredTool);
         return "l'outil adapté";
+    }
+
+    private static string TorqueText(TighteningGroup g)
+    {
+        if (g != null)
+            foreach (var f in g.fasteners)
+                if (f != null) return " (" + f.targetTorque.ToString("F0") + " N·m)";
+        return "";
+    }
+
+    // Outil attendu en ce moment : celui du serrage en cours, sinon celui du premier groupe.
+    private string ExpectedToolText()
+    {
+        TighteningGroup g = ActiveGroup();
+        if (g == null && groups.Length > 0) g = groups[0];
+        return ToolText(g);
     }
 
     // ---------- Noms et conseils des pièces ----------
@@ -162,14 +207,17 @@ public class TutorialGuide : MonoBehaviour
         string s = n.ToLowerInvariant();
         if (s.Contains("bushing") || s.Contains("bague")) return "une bague-palier";
         if (s.StartsWith("em_")) return "l'ensemble piston-bielle " + n.Substring(3).ToUpperInvariant();
+        if (s.StartsWith("ass_pist")) return "un ensemble piston-bielle";
+        if (s.StartsWith("ass_pist")) return "un ensemble piston-bielle";
         if (s.Contains("crank")) return "le vilebrequin";
         if (s.Contains("cap_rod") || s.Contains("cap rod")) return "le chapeau de bielle";
         if (s.Contains("piston_pin")) return "l'axe de piston";
         if (s.Contains("piston_rod")) return "la bielle";
         if (s.Contains("piston_head")) return "le piston";
-        if (s.Contains("screw")) return "une vis CHC";
+        if (s.Contains("socket head")) return "une vis CHC";
+        if (s.Contains("screw") || s.Contains("bolt") || s.Contains("vis")) return "une vis du carter";
         if (s.Contains("nut")) return "un écrou";
-        if (s.Contains("oil_pan")) return "le carter d'huile";
+        if (s.Contains("oil_pan") || s.Contains("carter")) return "le carter inférieur";
         return n;
     }
 
@@ -178,12 +226,15 @@ public class TutorialGuide : MonoBehaviour
         string s = n.ToLowerInvariant();
         if (s.Contains("bushing") || s.Contains("bague")) return "Elle se place à une extrémité du vilebrequin,\nen appui sur son épaulement.";
         if (s.StartsWith("em_")) return "Chaque ensemble va dans SON cylindre :\nvérifiez le repère avant de le poser.";
-        if (s.Contains("oil_pan")) return "Il ferme le bas du bloc et maintient le vilebrequin.";
+        if (s.StartsWith("ass_pist")) return "Descendez le piston dans le cylindre indiqué par le fantôme,\nla tête de bielle sur le vilebrequin.";
+        if (s.StartsWith("ass_pist")) return "Descendez-le dans le cylindre indiqué par le fantôme,\ntête de bielle sur le vilebrequin.";
+        if (s.Contains("oil_pan") || s.Contains("carter")) return "Il ferme le bas du bloc et maintient le vilebrequin.";
         if (s.Contains("crank")) return "Flasque de poulie vers l'avant du moteur.";
         if (s.Contains("cap_rod") || s.Contains("cap rod")) return "Respectez son sens : il se remonte comme il était sur la bielle.";
         if (s.Contains("piston_pin")) return "L'axe peut tourner sur lui-même : seule sa direction compte.";
         if (s.Contains("piston_head")) return "Attention au sens de montage du piston.";
-        if (s.Contains("screw")) return "La vis traverse la bielle et le chapeau, tête du bon côté.";
+        if (s.Contains("socket head")) return "La vis traverse la bielle et le chapeau, tête du bon côté.";
+        if (s.Contains("screw") || s.Contains("bolt") || s.Contains("vis")) return "Elle fixe le carter sur le bloc.";
         if (s.Contains("nut")) return "L'écrou se place au bout de la vis.";
         return "";
     }

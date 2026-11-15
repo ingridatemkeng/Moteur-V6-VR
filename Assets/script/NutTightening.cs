@@ -57,7 +57,7 @@ public class NutTightening : ToolTarget
     public UnityEvent onOverTightened;        // sur-serrage (couple ou angle)
     public UnityEvent onUnderTightened;       // clé réglée trop bas : couple insuffisant
     public UnityEvent onAngleReached;         // angle cible atteint (avant le relâchement)
-    public UnityEvent onOutOfSequence;        // angle commencé avant le pré-serrage de toutes les vis
+    public UnityEvent onOutOfSequence;        // ordre non respecté (serrage en croix, ou angle avant le pré-serrage)
 
     public Phase CurrentPhase { get; private set; } = Phase.Inactif;
     public float CurrentTorque { get; private set; }
@@ -72,6 +72,10 @@ public class NutTightening : ToolTarget
     private bool overWarned;
     private bool angleReachedDone;
     private TorqueSetting setting;            // réglage de la clé engagée (null = clé non réglable)
+    // Pièces exportées avec leur pivot loin du maillage (à l'origine du moteur) :
+    // la vis doit alors tourner autour du centre de son maillage, pas autour de son pivot.
+    private bool pivotFarFromMesh;
+    private Vector3 meshCenter;
 
     // Valeur à laquelle la clé clique : celle réglée sur la clé, sinon la consigne de l'écrou.
     private float ClickTorque => setting != null ? setting.value : targetTorque;
@@ -88,6 +92,13 @@ public class NutTightening : ToolTarget
 
     void Awake()
     {
+        MeshFilter mesh = GetComponent<MeshFilter>();
+        if (mesh != null && mesh.sharedMesh != null)
+        {
+            meshCenter = mesh.sharedMesh.bounds.center;
+            pivotFarFromMesh = meshCenter.magnitude > mesh.sharedMesh.bounds.extents.magnitude;
+        }
+
         if (!autoDetectAxis) return;
 
         MeshFilter mf = GetComponent<MeshFilter>();
@@ -134,6 +145,20 @@ public class NutTightening : ToolTarget
         switch (CurrentPhase)
         {
             case Phase.Couple:
+                // Serrage en croix : ce n'est pas le tour de cette vis.
+                if (group != null && !clickDone && !group.IsInOrder(this))
+                {
+                    if (!sequenceWarned)
+                    {
+                        sequenceWarned = true;
+                        HadError = true;
+                        NutTightening expected = group.ExpectedNext();
+                        Log("HORS SEQUENCE : serrage en croix, serrez d'abord la vis opposée"
+                            + (expected != null ? " (" + expected.name + ")." : "."));
+                        onOutOfSequence.Invoke();
+                    }
+                    if (!group.modeEvaluation) return; // mode Apprentissage : on bloque
+                }
                 float rate = targetTorque / degreesToReachTorque;
                 if (!clickDone)
                 {
@@ -193,7 +218,11 @@ public class NutTightening : ToolTarget
         }
 
         // L'écrou suit la clé : il tourne sur lui-même autour de l'axe de la vis.
-        if (rotateVisually) transform.Rotate(localAxis, toolDegrees, Space.Self);
+        if (rotateVisually)
+        {
+            if (pivotFarFromMesh) transform.RotateAround(transform.TransformPoint(meshCenter), WorldAxis, toolDegrees);
+            else transform.Rotate(localAxis, toolDegrees, Space.Self);
+        }
 
         UpdateDisplay();
     }
@@ -243,6 +272,7 @@ public class NutTightening : ToolTarget
 
                 CurrentPhase = angleStep ? Phase.Angle : Phase.Termine;
                 overWarned = false;   // on repart à zéro pour la phase angulaire
+                if (group != null) group.NotifyTorqued(this);
                 onTorqueValidated.Invoke();
                 if (group != null) group.NotifyChanged();
                 break;
@@ -277,10 +307,10 @@ public class NutTightening : ToolTarget
         if (display == null) return;
         switch (CurrentPhase)
         {
-            case Phase.Couple: display.text = "Couple\n" + CurrentTorque.ToString("F1") + " / " + targetTorque.ToString("F0") + " N·m"; break;
-            case Phase.Angle: display.text = "Angle\n" + CurrentAngle.ToString("F0") + " / " + targetAngle.ToString("F0") + "°"; break;
+            case Phase.Couple:  display.text = "Couple\n" + CurrentTorque.ToString("F1") + " / " + targetTorque.ToString("F0") + " N·m"; break;
+            case Phase.Angle:   display.text = "Angle\n" + CurrentAngle.ToString("F0") + " / " + targetAngle.ToString("F0") + "°"; break;
             case Phase.Termine: display.text = HadError ? "Serré (erreur)" : "Serré OK"; break;
-            default: display.text = ""; break;
+            default:            display.text = ""; break;
         }
     }
 

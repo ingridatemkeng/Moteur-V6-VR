@@ -1,26 +1,46 @@
 using System;
 using UnityEngine;
 
-// N'affiche qu'UN seul fantÙme ‡ la fois : celui de la premiËre piËce de la liste qui n'est pas encore posÈe.
-// - Supprime le clignotement d˚ aux fantÙmes transparents superposÈs.
-// - Guide l'apprenant Ètape par Ètape (embryon du futur graphe de prÈcÈdence).
-// - PrÈvient le tutoriel ‡ chaque changement d'Ètape.
-// ¿ placer sur un objet de la scËne (ex. gamme1). Remplir la liste dans l'ordre de la gamme.
+// N'affiche qu'UN seul fant√¥me √† la fois : celui de la premi√®re pi√®ce de la liste qui n'est pas encore pos√©e.
+// - Supprime le clignotement d√ª aux fant√¥mes transparents superpos√©s.
+// - Guide l'apprenant √©tape par √©tape (embryon du futur graphe de pr√©c√©dence).
+// - Pr√©vient le tutoriel √† chaque changement d'√©tape.
+// - Pendant un serrage (groupe activ√© et pas encore termin√©), aucun fant√¥me n'est affich√© :
+//   la pi√®ce suivante n'appara√Æt qu'une fois le serrage fini.
+// - Colore la pi√®ce √† prendre. Pour des pi√®ces identiques et interchangeables (vis, √©crous, bagues),
+//   toutes celles qui restent sont color√©es : l'utilisateur prend celle qu'il veut.
+// √Ä placer sur un objet de la sc√®ne (ex. gamme1). Remplir la liste dans l'ordre de la gamme.
 
 public class GhostSequence : MonoBehaviour
 {
-    [Tooltip("Les piËces dans l'ordre de montage (ex. crank_shaft, piston_head, piston_pin, piston_rod, piston_cap_rod, vis, Ècrous).")]
+    [Tooltip("Les pi√®ces dans l'ordre de montage (ex. crank_shaft, piston_head, piston_pin, piston_rod, piston_cap_rod, vis, √©crous).")]
     public SnapToTarget[] steps;
+
+    [Header("Mise en √©vidence de la pi√®ce √† prendre")]
+    public bool highlightCurrent = true;
+    public Color highlightColor = new Color(1f, 0.55f, 0f);   // orange
 
     public SnapToTarget Current { get; private set; }
     public int CurrentIndex { get; private set; } = -1;
     public int Count => steps != null ? steps.Length : 0;
 
-    // (piËce en cours ou null si tout est posÈ, index de l'Ètape, nombre total d'Ètapes)
+    // (pi√®ce en cours ou null si tout est pos√©, index de l'√©tape, nombre total d'√©tapes)
     public event Action<SnapToTarget, int, int> StepChanged;
+
+    private TighteningGroup[] groups = new TighteningGroup[0];
+    private MaterialPropertyBlock block;
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");   // mat√©riaux URP
+    private static readonly int ColorId = Shader.PropertyToID("_Color");           // autres mat√©riaux
 
     void Start()
     {
+        groups = FindObjectsByType<TighteningGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var g in groups)
+        {
+            g.onActivated.AddListener(Refresh);
+            g.onAllTightened.AddListener(Refresh);
+        }
+
         foreach (var s in steps)
         {
             if (s == null) continue;
@@ -30,7 +50,7 @@ public class GhostSequence : MonoBehaviour
         Refresh();
     }
 
-    // Masque tous les fantÙmes, puis affiche seulement celui de l'Ètape en cours.
+    // Masque tous les fant√¥mes, puis affiche seulement celui de l'√©tape en cours.
     public void Refresh()
     {
         SnapToTarget current = null;
@@ -41,22 +61,57 @@ public class GhostSequence : MonoBehaviour
             var s = steps[i];
             if (s == null || s.target == null) continue;
             s.target.gameObject.SetActive(false);
+            SetHighlight(s, false);
             if (current == null && !s.IsPlaced) { current = s; index = i; }
         }
 
-        if (current != null)
+        // Un serrage est en cours : on attend qu'il soit termin√© avant de montrer la pi√®ce suivante.
+        bool tightening = false;
+        foreach (var g in groups)
+            if (g != null && g.IsActivated && !g.IsFinished) tightening = true;
+
+        if (tightening && current != null)
+        {
+            current = null;
+            index = -1;
+            Debug.Log("[Guide] serrage en cours : la pi√®ce suivante appara√Ætra ensuite.");
+        }
+        else if (current != null)
         {
             current.target.gameObject.SetActive(true);
-            Debug.Log("[Guide] Ètape en cours : " + current.name);
+            Debug.Log("[Guide] √©tape en cours : " + current.name);
+
+            // Couleur sur la pi√®ce √† prendre, et sur ses jumelles interchangeables encore √† poser.
+            if (highlightCurrent)
+            {
+                SetHighlight(current, true);
+                if (current.interchangeable)
+                    foreach (var s in steps)
+                        if (s != null && s != current && !s.IsPlaced && s.interchangeable && s.Family == current.Family)
+                            SetHighlight(s, true);
+            }
         }
         else
         {
-            Debug.Log("[Guide] toutes les piËces sont posÈes.");
+            Debug.Log("[Guide] toutes les pi√®ces sont pos√©es.");
         }
 
         bool changed = current != Current;
         Current = current;
         CurrentIndex = index;
         if (changed) StepChanged?.Invoke(current, index, steps.Length);
+    }
+
+    // Colore (ou d√©colore) une pi√®ce sans toucher √† son mat√©riau.
+    private void SetHighlight(SnapToTarget piece, bool on)
+    {
+        Renderer r = piece.GetComponent<Renderer>();
+        if (r == null) return;
+        if (!on) { r.SetPropertyBlock(null); return; }
+
+        if (block == null) block = new MaterialPropertyBlock();
+        block.SetColor(BaseColorId, highlightColor);
+        block.SetColor(ColorId, highlightColor);
+        r.SetPropertyBlock(block);
     }
 }
