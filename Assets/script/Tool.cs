@@ -227,7 +227,8 @@ public class Tool : MonoBehaviour
     {
         if (!held || engaged == null || driveMode != DriveMode.Levier) return;
 
-        Vector3 axis = engaged.ToolAxis.normalized;
+        // Axe de serrage : le sens horaire vu depuis la tête de vis compte toujours comme du vissage.
+        Vector3 axis = engaged.TighteningAxis;
         Vector3 center = engaged.WorkPoint;
 
         // Pose « voulue par la main » ce frame (avant qu'on cale l'outil sur l'écrou).
@@ -362,7 +363,7 @@ public class Tool : MonoBehaviour
         Quaternion delta = current * Quaternion.Inverse(lastRotation);
         lastRotation = current;
 
-        float degrees = TwistAngle(delta, engaged.ToolAxis.normalized);
+        float degrees = TwistAngle(delta, engaged.TighteningAxis);
         if (Mathf.Abs(degrees) > 0.01f) engaged.OnToolRotate(degrees);
     }
 

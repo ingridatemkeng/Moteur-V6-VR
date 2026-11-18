@@ -17,11 +17,11 @@ public static class ToolNames
         switch (t)
         {
             case ToolType.CleDynamometrique: return "clé dynamométrique";
-            case ToolType.Tournevis: return "tournevis";
-            case ToolType.CleMolette: return "clé à molette";
-            case ToolType.CleAllen: return "clé Allen";
-            case ToolType.Burette: return "burette d'huile";
-            default: return t.ToString();
+            case ToolType.Tournevis:         return "tournevis";
+            case ToolType.CleMolette:        return "clé à molette";
+            case ToolType.CleAllen:          return "clé Allen";
+            case ToolType.Burette:           return "burette d'huile";
+            default:                         return t.ToString();
         }
     }
 
@@ -31,7 +31,7 @@ public static class ToolNames
         switch (t)
         {
             case ToolType.Tournevis: return "un tournevis";
-            default: return "une " + Of(t);
+            default:                 return "une " + Of(t);
         }
     }
 }
@@ -78,6 +78,12 @@ public abstract class ToolTarget : MonoBehaviour
 
     // Axe autour duquel on mesure la rotation de l'outil (axe de la vis pour un écrou).
     public virtual Vector3 ToolAxis => transform.up;
+
+    // Axe de serrage : de la tête vers l'intérieur de la pièce.
+    // Une rotation POSITIVE autour de cet axe = sens horaire vu depuis la tête = sens du vissage.
+    // Fiable seulement si l'Empreinte (Work Point Override) est renseignée ; sinon on garde l'ancien axe.
+    public bool HasReliableDirection => workPointOverride != null;
+    public Vector3 TighteningAxis => HasReliableDirection ? -OutwardAxis : ToolAxis.normalized;
 
     public virtual void OnToolEngaged(Tool tool) { }
     public virtual void OnToolRotate(float degrees) { }

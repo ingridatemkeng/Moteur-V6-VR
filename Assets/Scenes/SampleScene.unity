@@ -3037,6 +3037,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -90
       objectReference: {fileID: 0}
+    - target: {fileID: 8834580379103119506, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
+      propertyPath: m_Name
+      value: crank_shaft
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -4207,6 +4211,37 @@ MonoBehaviour:
   onWrongPiece:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &395345738
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 395345739}
+  m_Layer: 0
+  m_Name: Empreinte
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &395345739
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395345738}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0000000025083864, y: -0.00007596076, z: 0.0000062198665}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 580172020423142417}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &395935961
 GameObject:
   m_ObjectHideFlags: 0
@@ -6223,6 +6258,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1999686688}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &546132101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 546132102}
+  m_Layer: 0
+  m_Name: Empreinte
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &546132102
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 546132101}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.00007863788, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4755071660388710444}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &553053088 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4675191511418529535, guid: 4b2921e31017eaf40bc3338894eba8c6, type: 3}
@@ -7385,7 +7451,7 @@ MonoBehaviour:
   workPointOverride: {fileID: 584322428}
   targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 180
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
@@ -9125,6 +9191,37 @@ Transform:
   - {fileID: 553228188}
   m_Father: {fileID: 1153353068}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &902434383
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 902434384}
+  m_Layer: 0
+  m_Name: Empreinte
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &902434384
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 902434383}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.000083, z: 0.000004}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7226761480667161644}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &908230027
 GameObject:
   m_ObjectHideFlags: 0
@@ -9513,7 +9610,7 @@ Transform:
   m_GameObject: {fileID: 931840240}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.313, y: 1.525, z: 2.368}
+  m_LocalPosition: {x: -0.025, y: 1.525, z: 2.368}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12678,7 +12775,7 @@ MonoBehaviour:
   workPointOverride: {fileID: 1050795487}
   targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 180
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
@@ -17946,12 +18043,12 @@ MonoBehaviour:
   engageSmoothTime: 0.12
   rotationSmoothing: 20
   alignToTarget: 1
-  localDriveAxis: {x: 0, y: 1, z: 0}
+  localDriveAxis: {x: 1, y: 0, z: 0}
   secondTip: {fileID: 0}
   secondDriveAxis: {x: 1, y: 0, z: 0}
   keepSeated: 1
   debugDistances: 1
-  debugMarkers: 1
+  debugMarkers: 0
   returnHomeOnRelease: 1
   returnDuration: 0.4
   onGrabbed:
@@ -19499,6 +19596,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2028384385}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2069547013
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2069547014}
+  m_Layer: 0
+  m_Name: Empreinte
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2069547014
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2069547013}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.00007863639, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7085559806072300577}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2073426864
 GameObject:
   m_ObjectHideFlags: 0
@@ -20026,6 +20154,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1878189737}
+  - {fileID: 395345739}
   m_Father: {fileID: 8862463843432471332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &816861371449786556
@@ -20765,11 +20894,12 @@ Transform:
   m_GameObject: {fileID: 4909568020458163307}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -0.28, y: -0.271, z: 0.046}
+  m_LocalPosition: {x: -0.349, y: -0.275, z: 0.046}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 749082512}
+  - {fileID: 546132102}
   m_Father: {fileID: 8862463843432471332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4909568020458163307
@@ -21263,7 +21393,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NutTightening
   requiredTool: 0
   requiredSocketSize: 1/2"
-  workPointOverride: {fileID: 0}
+  workPointOverride: {fileID: 546132102}
   targetTorque: 25
   torqueTolerance: 2
   degreesToReachTorque: 360
@@ -21530,11 +21660,12 @@ Transform:
   m_GameObject: {fileID: 7204811938920854154}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -0.257, y: -0.271, z: 0.044}
+  m_LocalPosition: {x: -0.31, y: -0.306, z: 0.044}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 708282143}
+  - {fileID: 2069547014}
   m_Father: {fileID: 8862463843432471332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7161844651586971141
@@ -21757,7 +21888,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NutTightening
   requiredTool: 0
   requiredSocketSize: 1/2"
-  workPointOverride: {fileID: 0}
+  workPointOverride: {fileID: 2069547014}
   targetTorque: 25
   torqueTolerance: 2
   degreesToReachTorque: 360
@@ -21983,6 +22114,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 909243449}
+  - {fileID: 902434384}
   m_Father: {fileID: 8862463843432471332}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &7226761480667161645
@@ -22129,7 +22261,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NutTightening
   requiredTool: 0
   requiredSocketSize: 1/2"
-  workPointOverride: {fileID: 0}
+  workPointOverride: {fileID: 902434384}
   targetTorque: 23
   torqueTolerance: 2
   degreesToReachTorque: 360
@@ -22908,7 +23040,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NutTightening
   requiredTool: 0
   requiredSocketSize: 1/2"
-  workPointOverride: {fileID: 0}
+  workPointOverride: {fileID: 395345739}
   targetTorque: 25
   torqueTolerance: 2
   degreesToReachTorque: 360

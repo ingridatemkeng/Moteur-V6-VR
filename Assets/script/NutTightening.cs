@@ -41,7 +41,7 @@ public class NutTightening : ToolTarget
     public AxisShape axisShape = AxisShape.Vis;
     [Tooltip("Axe de la vis dans le repère LOCAL de l'écrou : (1,0,0)=X rouge, (0,1,0)=Y vert, (0,0,1)=Z bleu.")]
     public Vector3 localAxis = Vector3.up;
-    [Tooltip("À cocher si la jauge ne monte pas quand on tourne dans le sens horaire.")]
+    [Tooltip("À cocher si la jauge ne monte pas quand on tourne dans le sens horaire. Inutile (laisser décoché) si l'Empreinte est renseignée : le sens est alors trouvé tout seul.")]
     public bool invertDirection = false;
 
     [Header("Affichage")]
@@ -220,8 +220,9 @@ public class NutTightening : ToolTarget
         // L'écrou suit la clé : il tourne sur lui-même autour de l'axe de la vis.
         if (rotateVisually)
         {
-            if (pivotFarFromMesh) transform.RotateAround(transform.TransformPoint(meshCenter), WorldAxis, toolDegrees);
-            else transform.Rotate(localAxis, toolDegrees, Space.Self);
+            // Même axe que celui de la clé, pour que la vis tourne dans le même sens qu'elle.
+            Vector3 pivot = pivotFarFromMesh ? transform.TransformPoint(meshCenter) : transform.position;
+            transform.RotateAround(pivot, TighteningAxis, toolDegrees);
         }
 
         UpdateDisplay();
