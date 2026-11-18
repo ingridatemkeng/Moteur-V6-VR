@@ -551,6 +551,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -572,6 +573,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &65511433
@@ -3386,6 +3390,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -3407,6 +3412,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &348594299
@@ -3792,6 +3800,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -3813,6 +3822,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &379031959
@@ -4188,6 +4200,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 0
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -4209,6 +4222,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &395345738
@@ -4621,6 +4637,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -4642,6 +4659,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &422609850
@@ -5130,6 +5150,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -5151,6 +5172,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &450854806
@@ -6835,6 +6859,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SessionLogger
   participant: P01
+  chooseInHeadset: 1
   recording: 1
   attemptDistance: 0.1
 --- !u!4 &669541564
@@ -7389,6 +7414,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -7410,6 +7436,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &711321906
@@ -9889,8 +9918,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EngineFlipper
   engine: {fileID: 1300911471}
   blockRenderer: {fileID: 1613353662}
-  requiredGroup: {fileID: 971870203}
+  requiredGroup: {fileID: 0}
   placer: {fileID: 0}
+  startUpright: 1
   flipButton: 8
   controller: 1
   duration: 2.5
@@ -10624,6 +10654,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -10645,6 +10676,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &1037093787
@@ -12341,6 +12375,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -12362,6 +12397,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1216619825
@@ -12713,6 +12751,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -12734,6 +12773,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &1236893885
@@ -16920,6 +16962,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -16941,6 +16984,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &1808810780
@@ -19076,6 +19122,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -19097,6 +19144,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &2028384384
@@ -20277,6 +20327,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 1
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -20298,6 +20349,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &3220887780432295035
@@ -20608,6 +20662,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -20629,6 +20684,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &4534513426124069803
@@ -21269,6 +21327,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -21290,6 +21349,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &6463240076813963242
@@ -21622,6 +21684,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -21643,6 +21706,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &7161844651586971146
@@ -21894,6 +21960,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -21915,6 +21982,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!4 &7226761480667161644
@@ -22137,6 +22207,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -22158,6 +22229,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!33 &7535522355362354108
@@ -22189,6 +22263,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -22210,6 +22285,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &7535522355362354110
@@ -22624,6 +22702,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -22645,6 +22724,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!64 &8927058327023757174
@@ -22916,6 +22998,7 @@ MonoBehaviour:
   symmetryAxis: {x: 0, y: 1, z: 0}
   interchangeable: 0
   partFamily: 
+  requiredSide: 1
   liveGuidance: 1
   guidanceDistance: 0.1
   hideTargetWhenPlaced: 1
@@ -22937,6 +23020,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWrongPiece:
+    m_PersistentCalls:
+      m_Calls: []
+  onWrongSide:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1660057539 &9223372036854775807

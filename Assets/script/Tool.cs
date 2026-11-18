@@ -101,8 +101,11 @@ public class Tool : MonoBehaviour
     private Transform activeTip;       // bout utilisé pour le serrage en cours
     private Vector3 activeDriveAxis;
     private ToolTarget seatedOn;       // cible dans laquelle la clé est restée plantée (clé lâchée)
-    private Vector3 lockedPosition;    // dernière pose calée dans le creux (mise à jour à chaque image)
+    // Dernière pose calée dans le creux, exprimée dans le repère de la vis :
+    // la clé laissée dans une vis suit le moteur quand on fait tourner le poste ou qu'on le retourne.
+    private Vector3 lockedPosition;
     private Quaternion lockedRotation;
+    private Transform lockedFrame;
     private bool hasLockedPose;
 
     private Vector3 homeLocalPos;
@@ -190,7 +193,7 @@ public class Tool : MonoBehaviour
             // Fin du geste : la vis juge le couple / l'angle, mais la clé reste plantée et immobile.
             seatedOn = engaged;
             engaged = null;
-            if (hasLockedPose) transform.SetPositionAndRotation(lockedPosition, lockedRotation);
+            if (hasLockedPose) ApplyLockedPose();
             seatedOn.OnToolDisengaged();
             Log("laissée dans " + seatedOn.name + ".");
             return;
@@ -218,7 +221,7 @@ public class Tool : MonoBehaviour
         // Clé plantée et lâchée : on la remet dans le creux à chaque image,
         // même si l'Interaction SDK l'a déplacée au moment du relâchement.
         if (!held && seatedOn != null && hasLockedPose)
-            transform.SetPositionAndRotation(lockedPosition, lockedRotation);
+            ApplyLockedPose();
 
         UpdateMarkers();      // après le calage : les billes montrent la position réelle
     }
@@ -288,8 +291,9 @@ public class Tool : MonoBehaviour
         // On garde en mémoire la pose « dans le creux » (une fois le glissement d'engagement terminé).
         if (s >= 1f)
         {
-            lockedPosition = tipLockedPos;
-            lockedRotation = finalRot;
+            lockedFrame = engaged.transform;
+            lockedPosition = lockedFrame.InverseTransformPoint(tipLockedPos);
+            lockedRotation = Quaternion.Inverse(lockedFrame.rotation) * finalRot;
             hasLockedPose = true;
         }
     }
@@ -510,4 +514,11 @@ public class Tool : MonoBehaviour
     }
 
     private void Log(string msg) => Debug.Log("[Outil] " + ToolNames.Of(type) + " : " + msg);
+
+    // Replace la clé dans la pose calée, là où se trouve la vis maintenant.
+    private void ApplyLockedPose()
+    {
+        if (lockedFrame == null) return;
+        transform.SetPositionAndRotation(lockedFrame.TransformPoint(lockedPosition), lockedFrame.rotation * lockedRotation);
+    }
 }

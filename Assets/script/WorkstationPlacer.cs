@@ -7,6 +7,7 @@ using TMPro;
 // 2. Positionnement : le poste apparaît et suit la manette droite ; on la pose sur une surface, A.
 // 3. Ajustement   : le joystick tourne le poste ; A valide, B recommence.
 // 4. Verrouillé   : l'exercice peut commencer ; B permet de replacer le poste.
+//                   Le joystick (gauche / droite) fait toujours tourner le poste sur la table.
 // Tout le poste (moteur, pièces, cibles, clé) se déplace ensemble.
 
 public class WorkstationPlacer : MonoBehaviour
@@ -141,6 +142,15 @@ public class WorkstationPlacer : MonoBehaviour
                 break;
 
             case State.Verrouille:
+                // Rotation du poste à tout moment, autour du dessous du bloc (le poste ne glisse pas sur la table).
+                // On ignore le joystick quand il est poussé surtout vers le haut ou le bas
+                // (c'est le geste de réglage de la clé dynamométrique).
+                Vector2 r = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.RTouch);
+                Vector2 l = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.LTouch);
+                Vector2 stick = Mathf.Abs(r.x) >= Mathf.Abs(l.x) ? r : l;
+                if (Mathf.Abs(stick.x) > 0.2f && Mathf.Abs(stick.x) > Mathf.Abs(stick.y))
+                    RotateInPlace(stick.x * rotationSpeed * Time.deltaTime);
+
                 if (pressB) EnterPositioning();
                 break;
         }
@@ -185,6 +195,15 @@ public class WorkstationPlacer : MonoBehaviour
     {
         poste.rotation = Quaternion.Euler(0f, yaw, 0f);
         poste.position = placedPoint - poste.TransformVector(localBottomCenter);
+    }
+
+    // Fait tourner le poste sur lui-même, autour du point du dessous du bloc, sans le déplacer.
+    private void RotateInPlace(float degrees)
+    {
+        Vector3 pivot = poste.TransformPoint(localBottomCenter);
+        poste.RotateAround(pivot, Vector3.up, degrees);
+        yaw += degrees;
+        placedPoint = pivot;
     }
 
     private float YawTowardHead(Vector3 point)

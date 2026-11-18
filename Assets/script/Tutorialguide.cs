@@ -63,6 +63,8 @@ public class TutorialGuide : MonoBehaviour
                 "Bon endroit, mais mauvaise orientation :\ntournez la pièce pour qu'elle épouse le fantôme.\nLa console (manette gauche) indique l'écart en degrés."));
             piece.onWrongPlace.AddListener(() => Hint("place",
                 "Pas encore au bon endroit :\namenez la pièce sur le fantôme avant de la relâcher."));
+            piece.onWrongSide.AddListener(() => Hint("wrong-side",
+                "Le moteur n'est pas dans le bon sens pour cette pièce.\nAppuyez sur Y pour le retourner."));
             piece.onWrongPiece.AddListener(() => Hint("wrong-piece",
                 "Mauvaise pièce : cet emplacement en attend une autre.\nRegardez le fantôme : il a la forme de la pièce attendue."));
             piece.onSnapped.AddListener(() => Hint("snap",
@@ -110,7 +112,7 @@ public class TutorialGuide : MonoBehaviour
                 SetStep("Montage terminé, bravo !\n"
                         + (logger != null ? logger.Summary() + "\n" : "")
                         + "À contrôler en atelier : rotation libre du vilebrequin."
-                        + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : ""));
+                        + (hasFlipper ? "\nAppuyez sur Y pour remettre le moteur à l'endroit." : ""));
             });
 
             foreach (var f in group.fasteners)
@@ -169,13 +171,22 @@ public class TutorialGuide : MonoBehaviour
         if (sequence != null && sequence.Current != null)
             OnStepChanged(sequence.Current, sequence.CurrentIndex, sequence.Count);
         Hint("start",
-            "La pièce à prendre est colorée en orange.\nAttrapez-la avec la gâchette avant ou latérale,\npuis posez-la sur le fantôme transparent.");
+            "La pièce à prendre est colorée en orange.\nAttrapez-la avec la gâchette, posez-la sur le fantôme.\nJoystick gauche / droite : tourner le poste.\nY : retourner le moteur.");
     }
 
     private void OnStepChanged(SnapToTarget piece, int index, int count)
     {
         if (piece == null) return;   // tout est posé : c'est le serrage qui prend la suite
         string advice = Advice(piece.name);
+        if (!piece.EngineSideOk)
+        {
+            // Gamme, opération 20 : le bas moteur se monte bloc retourné sur le support rotatif.
+            SetStep("Étape " + (index + 1) + "/" + count + " : posez " + FriendlyName(piece.name) + ".\n"
+                    + (piece.requiredSide == SnapToTarget.EngineSide.CarterVersLeHaut
+                        ? "D'abord, retournez le moteur avec Y :\nle bas moteur se monte plan de carter vers le haut."
+                        : "D'abord, remettez le moteur à l'endroit avec Y."));
+            return;
+        }
         SetStep("Étape " + (index + 1) + "/" + count + " : posez " + FriendlyName(piece.name) + "."
                 + (string.IsNullOrEmpty(advice) ? "" : "\n" + advice));
     }

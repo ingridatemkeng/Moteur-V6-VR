@@ -1,26 +1,38 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 // Support moteur rotatif : retourne le bloc de 180° autour de l'axe du vilebrequin.
-// Comme en atelier : le bas moteur (Gamme 1) se monte bloc retourné, puis on fait pivoter
-// le bloc pour monter le haut moteur (Gamme 2).
-// - Disponible quand la Gamme 1 est terminée (ou tout de suite si aucun groupe n'est renseigné).
-// - Bouton Y (manette gauche) : retourner ; un nouvel appui le remet dans l'autre sens.
-// - Toutes les pièces déjà montées tournent avec le bloc (elles sont enfants du moteur).
+// Comme en atelier (gamme, opération 20) :
+// - au début, le bloc apparaît À L'ENDROIT (comme dans la voiture) ;
+// - on le retourne (plan de carter vers le haut) pour monter le bas moteur ;
+// - on peut le retourner à tout moment (bouton Y).
+// Le bloc, les pièces DÉJÀ POSÉES et les fantômes tournent ensemble.
+// Les pièces encore sur la table ne bougent pas.
+//
+// Dans la scène Unity, le moteur est modélisé carter vers le haut (position de montage du bas moteur).
+// Si « Start Upright » est coché, il est retourné une fois, instantanément, au lancement.
 //
 // À placer sur un objet de la scène (ex. Poste). Engine = gamme1, Block Renderer = le bloc moteur.
 
+[DefaultExecutionOrder(-50)]   // avant le WorkstationPlacer, qui mesure le dessous du bloc dans son Awake
 public class EngineFlipper : MonoBehaviour
 {
+    public static EngineFlipper Instance { get; private set; }
+
     [Header("Références")]
     [Tooltip("L'objet qui contient tout le moteur et ses pièces (gamme1).")]
     public Transform engine;
     [Tooltip("Le Mesh Renderer du bloc moteur : sert à trouver l'axe du vilebrequin et le dessous du bloc.")]
     public Renderer blockRenderer;
-    [Tooltip("Le groupe de serrage de la Gamme 1 : le retournement devient possible quand il est terminé. Vide = toujours possible.")]
+    [Tooltip("Optionnel : retournement possible seulement après ce serrage. VIDE = possible à tout moment (recommandé).")]
     public TighteningGroup requiredGroup;
     public WorkstationPlacer placer;
+
+    [Header("Départ")]
+    [Tooltip("Coché : le moteur apparaît à l'endroit (comme dans la voiture). Il faut le retourner pour monter le bas moteur.")]
+    public bool startUpright = true;
 
     [Header("Commande")]
     public OVRInput.Button flipButton = OVRInput.Button.Four;          // Y
@@ -35,28 +47,53 @@ public class EngineFlipper : MonoBehaviour
     public UnityEvent onFlipAvailable;
     public UnityEvent onFlipped;
 
-    public bool IsFlipped { get; private set; }
+    // Vrai quand le bloc est carter vers le haut (position de montage du bas moteur, comme dans la scène Unity).
+    public bool IsUpsideDown { get; private set; } = true;
+    // Vrai quand le bloc n'est plus dans sa position de départ.
+    public bool IsFlipped => startUpright ? IsUpsideDown : !IsUpsideDown;
     public bool IsAvailable => available;
+    public bool IsFlipping => flipping;
 
     private bool available;
     private bool flipping;
 
+    void Awake()
+    {
+        Instance = this;
+        if (startUpright && engine != null && blockRenderer != null)
+        {
+            // Retournement instantané, avant que le poste ne masque son contenu (un objet masqué n'a plus de taille).
+            Bounds b = blockRenderer.bounds;
+            var loose = DetachLoosePieces();
+            engine.RotateAround(b.center, WorldFlipAxis(), 180f);
+            engine.position += Vector3.up * (b.min.y - blockRenderer.bounds.min.y);
+            Reattach(loose);
+            IsUpsideDown = false;
+        }
+    }
+
     void Start()
     {
         if (placer == null) placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
+
         Debug.Log("[Guide] support rotatif prêt : moteur " + (engine != null ? engine.name : "NON RENSEIGNÉ")
                   + ", bloc " + (blockRenderer != null ? blockRenderer.name : "NON RENSEIGNÉ")
-                  + (requiredGroup != null ? ", disponible après la Gamme 1." : ", disponible tout de suite."));
+                  + (IsUpsideDown ? ", carter vers le haut" : ", à l'endroit")
+                  + (requiredGroup != null ? ", retournement après la Gamme 1." : ", retournement possible à tout moment (Y)."));
 
         if (requiredGroup != null) requiredGroup.onAllTightened.AddListener(MakeAvailable);
         else MakeAvailable();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void MakeAvailable()
     {
         if (available) return;
         available = true;
-        Debug.Log("[Guide] le moteur peut être retourné : appuyez sur Y.");
         onFlipAvailable.Invoke();
     }
 
@@ -65,7 +102,6 @@ public class EngineFlipper : MonoBehaviour
         // Bouton Y : lu de deux façons (bouton « logique » de la manette gauche, et bouton physique Y).
         bool pressed = OVRInput.GetDown(flipButton, controller) || OVRInput.GetDown(OVRInput.RawButton.Y);
         if (!pressed || flipping) return;
-        Debug.Log("[Guide] bouton Y reçu.");
 
         // On explique toujours pourquoi le retournement est refusé.
         if (engine == null || blockRenderer == null)
@@ -74,7 +110,7 @@ public class EngineFlipper : MonoBehaviour
             Debug.Log("[Guide] retournement impossible : validez d'abord le placement du poste (A).");
         else if (!available)
             Debug.Log("[Guide] retournement pas encore disponible : terminez d'abord le serrage de la Gamme 1"
-                      + " (ou videz Required Group pour tester).");
+                      + " (ou videz Required Group).");
         else
             StartCoroutine(Flip());
     }
@@ -94,10 +130,39 @@ public class EngineFlipper : MonoBehaviour
         return blockRenderer.transform.TransformDirection(local).normalized;
     }
 
+    // ---------- Pièces encore sur la table : elles ne tournent pas avec le bloc ----------
+
+    private struct Loose { public Transform t; public Transform parent; public int sibling; }
+
+    // Sort temporairement du moteur les pièces pas encore posées (elles restent où elles sont).
+    private List<Loose> DetachLoosePieces()
+    {
+        var list = new List<Loose>();
+        foreach (var p in FindObjectsByType<SnapToTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (p.IsPlaced || !p.transform.IsChildOf(engine)) continue;
+            list.Add(new Loose { t = p.transform, parent = p.transform.parent, sibling = p.transform.GetSiblingIndex() });
+        }
+        foreach (var l in list) l.t.SetParent(engine.parent, true);
+        return list;
+    }
+
+    private static void Reattach(List<Loose> list)
+    {
+        foreach (var l in list)
+        {
+            if (l.t == null) continue;
+            l.t.SetParent(l.parent, true);
+            l.t.SetSiblingIndex(l.sibling);
+        }
+    }
+
     private IEnumerator Flip()
     {
         flipping = true;
         Debug.Log("[Guide] retournement du moteur...");
+
+        var loose = DetachLoosePieces();
 
         Bounds start = blockRenderer.bounds;
         Vector3 pivot = start.center;
@@ -129,11 +194,12 @@ public class EngineFlipper : MonoBehaviour
         // Le nouveau dessous du bloc se repose exactement à la hauteur de la table.
         float newMin = blockRenderer.bounds.min.y;
         engine.position += Vector3.up * (groundY - newMin);
+        Reattach(loose);
         if (placer != null) placer.RecomputeBottom();
 
-        IsFlipped = !IsFlipped;
+        IsUpsideDown = !IsUpsideDown;
         flipping = false;
-        Debug.Log("[Guide] moteur retourné (" + (IsFlipped ? "côté haut moteur" : "côté bas moteur") + ").");
+        Debug.Log("[Guide] moteur retourné (" + (IsUpsideDown ? "carter vers le haut" : "à l'endroit") + ").");
         onFlipped.Invoke();
     }
 }

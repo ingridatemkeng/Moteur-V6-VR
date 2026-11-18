@@ -17,7 +17,7 @@ public class NutTightening : ToolTarget
     [Tooltip("Couple attendu pour CET écrou (N·m). La clé, elle, clique à la valeur réglée par l'apprenant.")]
     public float targetTorque = 25f;          // N·m (gamme : env. 25 N·m pour les vis CHC de bielle)
     public float torqueTolerance = 2f;        // ± N·m
-    public float degreesToReachTorque = 180f; // rotation nécessaire pour atteindre le couple cible
+    public float degreesToReachTorque = 90f;  // rotation nécessaire pour atteindre le couple cible (≈ un geste de poignet)
     [Tooltip("Coché : après le couple, un serrage angulaire est demandé. Décoché (gamme actuelle) : la vis est terminée dès que le couple est validé.")]
     public bool angleStep = false;
     public float targetAngle = 90f;           // degrés
@@ -27,7 +27,7 @@ public class NutTightening : ToolTarget
     [Tooltip("Après le clic, la clé « décroche » : la rotation supplémentaire ne fait presque plus monter le couple (0,1 = 10 %).")]
     public float postClickGain = 0.1f;
     [Tooltip("Rotation tolérée après le clic (degrés). Au-delà : sur-serrage.")]
-    public float maxDegreesAfterClick = 30f;
+    public float maxDegreesAfterClick = 90f;
 
     [Header("Vibration des manettes")]
     public bool haptics = true;

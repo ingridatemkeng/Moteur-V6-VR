@@ -46,6 +46,23 @@ public class SnapToTarget : MonoBehaviour
     [Tooltip("Famille de la pièce. Vide = déduite du nom (« hex nut… » et « hex nut….001 » sont de la même famille).")]
     public string partFamily = "";
 
+    public enum EngineSide { Indifferent, CarterVersLeHaut, ALEndroit }
+
+    [Header("Sens du moteur")]
+    [Tooltip("Sens du bloc nécessaire pour poser cette pièce. Bas moteur : Carter Vers Le Haut. Haut moteur : A L Endroit.")]
+    public EngineSide requiredSide = EngineSide.CarterVersLeHaut;
+
+    // Le moteur est-il dans le bon sens pour cette pièce ? (vrai s'il n'y a pas de support rotatif)
+    public bool EngineSideOk
+    {
+        get
+        {
+            EngineFlipper f = EngineFlipper.Instance;
+            if (f == null || requiredSide == EngineSide.Indifferent) return true;
+            return requiredSide == EngineSide.CarterVersLeHaut ? f.IsUpsideDown : !f.IsUpsideDown;
+        }
+    }
+
     [Header("Guidage en direct")]
     [Tooltip("Pendant qu'on tient la pièce près de sa cible, affiche la distance et l'écart d'angle dans la console.")]
     public bool liveGuidance = true;
@@ -69,6 +86,7 @@ public class SnapToTarget : MonoBehaviour
     public UnityEvent onUnsnapped;           // pièce retirée après avoir été bien posée
     public UnityEvent onGrab;                // pièce attrapée (utilisé par le tutoriel)
     public UnityEvent onWrongPiece;          // posée sur l'emplacement d'une AUTRE sorte de pièce
+    public UnityEvent onWrongSide;           // posée alors que le moteur n'est pas dans le bon sens
 
     public bool IsPlaced => isPlaced;
     // Écarts mesurés au dernier relâchement (utilisés par le journal de session).
@@ -172,6 +190,15 @@ public class SnapToTarget : MonoBehaviour
         float angle = OrientationError();
         LastDistance = distance;
         LastAngle = angle;
+
+        // Le moteur n'est pas dans le bon sens pour cette pièce : on refuse, quelle que soit la position.
+        if (!EngineSideOk)
+        {
+            Debug.Log(name + " : MAUVAIS SENS du moteur : retournez-le d'abord (Y), "
+                      + (requiredSide == EngineSide.CarterVersLeHaut ? "carter vers le haut." : "à l'endroit."));
+            onWrongSide.Invoke();
+            return;
+        }
 
         // Cas 1 : bon endroit ET bonne orientation -> montage correct
         if (distance <= positionTolerance && angle <= angleTolerance)

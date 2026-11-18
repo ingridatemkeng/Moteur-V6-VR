@@ -28,6 +28,7 @@ public class GhostSequence : MonoBehaviour
     public event Action<SnapToTarget, int, int> StepChanged;
 
     private TighteningGroup[] groups = new TighteningGroup[0];
+    private bool lastSideOk = true;
     private MaterialPropertyBlock block;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");   // matériaux URP
     private static readonly int ColorId = Shader.PropertyToID("_Color");           // autres matériaux
@@ -35,6 +36,7 @@ public class GhostSequence : MonoBehaviour
     void Start()
     {
         groups = FindObjectsByType<TighteningGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (EngineFlipper.Instance != null) EngineFlipper.Instance.onFlipped.AddListener(Refresh);
         foreach (var g in groups)
         {
             g.onActivated.AddListener(Refresh);
@@ -76,6 +78,11 @@ public class GhostSequence : MonoBehaviour
             index = -1;
             Debug.Log("[Guide] serrage en cours : la pièce suivante apparaîtra ensuite.");
         }
+        else if (current != null && !current.EngineSideOk)
+        {
+            // Moteur dans le mauvais sens pour cette étape : pas de fantôme tant qu'il n'est pas retourné.
+            Debug.Log("[Guide] étape en cours : " + current.name + " (retournez d'abord le moteur avec Y).");
+        }
         else if (current != null)
         {
             current.target.gameObject.SetActive(true);
@@ -96,7 +103,9 @@ public class GhostSequence : MonoBehaviour
             Debug.Log("[Guide] toutes les pièces sont posées.");
         }
 
-        bool changed = current != Current;
+        bool sideOk = current == null || current.EngineSideOk;
+        bool changed = current != Current || sideOk != lastSideOk;
+        lastSideOk = sideOk;
         Current = current;
         CurrentIndex = index;
         if (changed) StepChanged?.Invoke(current, index, steps.Length);

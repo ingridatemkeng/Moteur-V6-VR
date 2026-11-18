@@ -13,7 +13,10 @@ using UnityEngine;
 // - Il se branche tout seul sur les pièces, les outils et les vis de la scène : rien à câbler.
 // - Il tient aussi les compteurs du BILAN de fin de montage (étape S14 de la gamme), même sans enregistrer.
 //
-// À placer sur un objet de la scène (ex. « Journal »). Renseigner Participant avant chaque passage.
+// À placer sur un objet de la scène (ex. « Journal »).
+// Choix du participant DANS LE CASQUE, sur l'écran d'accueil (avant le premier appui sur A) :
+//   joystick gauche / droite = participant précédent / suivant. P00 = vos propres tests.
+//   Le dernier code choisi est retenu d'une session à l'autre.
 // Fichiers : dossier « logs » de l'application
 //   casque : Android/data/<nom du paquet>/files/logs/   (visible avec Meta Quest Developer Hub)
 //   PC     : chemin affiché dans la Console au démarrage.
@@ -21,8 +24,10 @@ using UnityEngine;
 public class SessionLogger : MonoBehaviour
 {
     [Header("Session")]
-    [Tooltip("Code anonyme du participant (P01, P02...). Jamais de nom.")]
+    [Tooltip("Code anonyme du participant (P01, P02...). Jamais de nom. Remplacé par le choix fait dans le casque si « Choose In Headset » est coché.")]
     public string participant = "P00";
+    [Tooltip("Coché : le participant se choisit dans le casque, sur l'écran d'accueil (joystick gauche / droite).")]
+    public bool chooseInHeadset = true;
     [Tooltip("Décocher pour ne rien enregistrer (démonstration).")]
     public bool recording = true;
     [Tooltip("Une pièce relâchée à plus de cette distance (m) de son fantôme n'est pas comptée comme une erreur : c'est une simple reprise en main.")]
@@ -48,17 +53,101 @@ public class SessionLogger : MonoBehaviour
     private int totalHints;
     private readonly Dictionary<string, int> errorsByType = new Dictionary<string, int>();
 
+    // Choix du participant dans le casque.
+    private WorkstationPlacer placer;
+    private bool participantLocked;
+    private int participantNumber;
+    private float nextChoiceTime;
+    private bool choiceShown;
+    private readonly List<string> pending = new List<string>();   // lignes écrites avant le choix du participant
+    private const string PrefKey = "MoteurV6_participant";
+
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     void Start()
     {
-        if (recording) OpenFile();
+        placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
+
+        if (chooseInHeadset && placer != null)
+        {
+            // On repart du dernier participant choisi (mémorisé dans le casque).
+            participantNumber = PlayerPrefs.GetInt(PrefKey, ParseNumber(participant));
+        }
+        else LockParticipant();
 
         startTime = stepStartTime = Time.time;
         tutorial = FindFirstObjectByType<TutorialGuide>(FindObjectsInactive.Include);
         Subscribe();
         Write("session_ouverte", Application.version, "", "");
     }
+
+    // ---------- Choix du participant ----------
+
+    void Update()
+    {
+        if (participantLocked || placer == null) return;
+
+        // Dès que l'utilisateur a appuyé sur A, le participant est figé.
+        if (placer.CurrentState != WorkstationPlacer.State.Attente)
+        {
+            LockParticipant();
+            return;
+        }
+
+        float x = OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.RTouch).x
+                + OVRInput.Get(OVRInput.Axis2D.PrimaryThumbstick, OVRInput.Controller.LTouch).x;
+        bool changed = false;
+        if (Mathf.Abs(x) > 0.6f && Time.time >= nextChoiceTime)
+        {
+            participantNumber = Mathf.Clamp(participantNumber + (x > 0f ? 1 : -1), 0, 99);
+            nextChoiceTime = Time.time + 0.25f;
+            changed = true;
+        }
+        if (changed || !choiceShown) ShowChoice();
+    }
+
+    private void ShowChoice()
+    {
+        if (placer.instructions == null) return;
+        choiceShown = true;
+        placer.instructions.text = "Bienvenue\nAppuyez sur A pour faire apparaître\nle poste de montage\n\n"
+            + "Participant : " + Code(participantNumber) + (participantNumber == 0 ? " (test)" : "")
+            + "\n(joystick gauche / droite pour changer)";
+    }
+
+    private void LockParticipant()
+    {
+        if (participantLocked) return;
+        participantLocked = true;
+        if (chooseInHeadset && placer != null)
+        {
+            participant = Code(participantNumber);
+            PlayerPrefs.SetInt(PrefKey, participantNumber);
+            PlayerPrefs.Save();
+        }
+        Debug.Log("[Guide] participant : " + participant);
+
+        if (!recording) { pending.Clear(); return; }
+        OpenFile();
+        if (writer != null)
+        {
+            // Les lignes écrites avant le choix reçoivent maintenant la session et le participant.
+            foreach (string line in pending)
+                writer.WriteLine(line.Replace("{SESSION}", sessionId).Replace("{PARTICIPANT}", Clean(participant)));
+        }
+        pending.Clear();
+    }
+
+    private static string Code(int n) => "P" + n.ToString("00");
+
+    private static int ParseNumber(string code)
+    {
+        string digits = "";
+        foreach (char c in code ?? "") if (char.IsDigit(c)) digits += c;
+        return int.TryParse(digits, out int n) ? Mathf.Clamp(n, 0, 99) : 0;
+    }
+
+    // ---------- Fichier ----------
 
     private void OpenFile()
     {
@@ -111,6 +200,7 @@ public class SessionLogger : MonoBehaviour
             });
             p.onWrongPiece.AddListener(() => Error("erreur_mauvaise_piece", p.name, Cm(p.LastDistance), Deg(p.LastAngle), true));
             p.onUnsnapped.AddListener(() => Write("piece_retiree", p.name, "", ""));
+            p.onWrongSide.AddListener(() => Error("erreur_sens_moteur", p.name, "", "", true));
         }
 
         // Outils.
@@ -151,7 +241,8 @@ public class SessionLogger : MonoBehaviour
 
         // Retournement du moteur et astuces du tutoriel.
         var flipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include);
-        if (flipper != null) flipper.onFlipped.AddListener(() => Write("moteur_retourne", flipper.IsFlipped ? "haut" : "bas", "", ""));
+        if (flipper != null) flipper.onFlipped.AddListener(() =>
+            Write("moteur_retourne", flipper.IsUpsideDown ? "carter_en_haut" : "a_l_endroit", "", ""));
 
         TutorialGuide.HintShown += OnHintShown;
     }
@@ -266,6 +357,7 @@ public class SessionLogger : MonoBehaviour
             case "erreur_sur_serrage":        return "sur-serrage";
             case "erreur_couple_insuffisant": return "couple insuffisant";
             case "erreur_hors_sequence":      return "ordre de serrage";
+            case "erreur_sens_moteur":        return "sens du moteur";
             default:                          return evt.Replace("erreur_", "");
         }
     }
@@ -274,14 +366,15 @@ public class SessionLogger : MonoBehaviour
 
     private void Write(string evt, string obj, string v1, string v2, bool withGrabDuration = false)
     {
-        if (writer == null) return;
+        bool waiting = recording && !participantLocked;   // participant pas encore choisi : on garde la ligne de côté
+        if (writer == null && !waiting) return;
         float now = Mathf.Max(Time.time, lastTime);
         lastTime = now;
         try
         {
-            writer.WriteLine(string.Join(";",
-                sessionId,
-                Clean(participant),
+            string line = string.Join(";",
+                waiting ? "{SESSION}" : sessionId,
+                waiting ? "{PARTICIPANT}" : Clean(participant),
                 Num(now - startTime),
                 (stepIndex + 1).ToString(Inv),
                 Clean(stepPiece),
@@ -293,7 +386,9 @@ public class SessionLogger : MonoBehaviour
                 withGrabDuration ? Num(now - grabTime) : "",
                 errorsInStep.ToString(Inv),
                 hintsInStep.ToString(Inv),
-                (tutorial != null && tutorial.showHints) ? "1" : "0"));
+                (tutorial != null && tutorial.showHints) ? "1" : "0");
+            if (waiting) pending.Add(line);
+            else writer.WriteLine(line);
         }
         catch (Exception e)
         {
