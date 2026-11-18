@@ -121,7 +121,7 @@ public class WorkstationPlacer : MonoBehaviour
                 if (pressA)
                 {
                     CurrentState = State.Ajustement;
-                    SetText("Joystick : tourner le moteur\nA : valider    B : recommencer");
+                    SetText("A : valider    B : replacer\nJoystick : tourner le moteur");
                     Debug.Log("[Placement] position choisie, ajustez la rotation puis validez avec A.");
                 }
                 break;
@@ -168,7 +168,7 @@ public class WorkstationPlacer : MonoBehaviour
     private void EnterPositioning()
     {
         CurrentState = State.Positionnement;
-        SetText("Posez la manette droite sur la table\npuis appuyez sur A");
+        SetText("Deplacer la manette droite\npuis appuyez sur A pour valider la position du poste");
         Debug.Log("[Placement] mode positionnement : posez la manette droite sur une surface et appuyez sur A.");
     }
 

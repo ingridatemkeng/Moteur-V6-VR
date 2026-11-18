@@ -31,6 +31,7 @@ public class TutorialGuide : MonoBehaviour
     private string hintText = "";
     private float hintUntil;
     private readonly HashSet<string> shown = new HashSet<string>();
+    private PedagogicalAssistant assistant;
 
     // Prévient le journal de session qu'une astuce vient d'être affichée (clé de l'astuce).
     public static event System.Action<string> HintShown;
@@ -41,6 +42,7 @@ public class TutorialGuide : MonoBehaviour
         if (placer == null) placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
         if (sequence == null) sequence = FindFirstObjectByType<GhostSequence>(FindObjectsInactive.Include);
         groups = FindObjectsByType<TighteningGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        assistant = FindFirstObjectByType<PedagogicalAssistant>(FindObjectsInactive.Include);
         if (panel == null && placer != null) panel = placer.instructions;
 
         int pieces = FindObjectsByType<SnapToTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
@@ -59,6 +61,9 @@ public class TutorialGuide : MonoBehaviour
         {
             piece.onGrab.AddListener(() => Hint("grab",
                 "Le fantôme transparent montre où va la pièce.\nPlacez-la dessus, dans la même orientation,\npuis relâchez la gâchette."));
+            SnapToTarget sp = piece;
+            sp.onWrongOrientation.AddListener(() => Remind(sp));
+            sp.onWrongPiece.AddListener(() => { if (sequence != null && sequence.Current != null) Remind(sequence.Current); });
             piece.onWrongOrientation.AddListener(() => Hint("orientation",
                 "Bon endroit, mais mauvaise orientation :\ntournez la pièce pour qu'elle épouse le fantôme.\nLa console (manette gauche) indique l'écart en degrés."));
             piece.onWrongPlace.AddListener(() => Hint("place",
@@ -187,8 +192,25 @@ public class TutorialGuide : MonoBehaviour
                         : "D'abord, remettez le moteur à l'endroit avec Y."));
             return;
         }
-        SetStep("Étape " + (index + 1) + "/" + count + " : posez " + FriendlyName(piece.name) + "."
-                + (string.IsNullOrEmpty(advice) ? "" : "\n" + advice));
+        // Aide adaptative : conseil pour un débutant seulement ; consigne courte quand la compétence est maîtrisée.
+        AdaptiveHelp ah = AdaptiveHelp.Instance;
+        bool giveAdvice = ah == null || ah.ShouldGiveAdvice(piece);
+        bool mastered = ah != null && ah.LevelFor(piece) == AdaptiveHelp.Level.Maitrise;
+        SetStep("Étape " + (index + 1) + "/" + count + (mastered ? " : " : " : posez ") + FriendlyName(piece.name) + "."
+                + (giveAdvice && !string.IsNullOrEmpty(advice) ? "\n" + advice : ""));
+    }
+
+    // Aide adaptative : après une erreur, un débutant revoit le conseil de la pièce (même si l'astuce générale a déjà été montrée).
+    private void Remind(SnapToTarget piece)
+    {
+        if (assistant != null) return;   // l'assistant pédagogique donne déjà un retour complet après chaque erreur
+        AdaptiveHelp ah = AdaptiveHelp.Instance;
+        if (ah == null || !ah.adaptive || !ah.ShouldGiveAdvice(piece)) return;
+        string advice = Advice(piece.name);
+        if (string.IsNullOrEmpty(advice)) return;
+        hintText = "Conseil pour " + FriendlyName(piece.name) + " :\n" + advice;
+        hintUntil = Time.time + hintDuration;
+        Refresh();
     }
 
     // Le groupe en cours de serrage (activé, pas encore terminé), ou null.
@@ -251,7 +273,7 @@ public class TutorialGuide : MonoBehaviour
 
     // ---------- Noms et conseils des pièces ----------
 
-    private static string FriendlyName(string n)
+    public static string FriendlyName(string n)
     {
         string s = n.ToLowerInvariant();
         if (s.Contains("bushing") || s.Contains("bague")) return "une bague-palier";
@@ -296,8 +318,27 @@ public class TutorialGuide : MonoBehaviour
         Refresh();
     }
 
+    // Pour l'assistant pédagogique : affiche un message temporaire sur le panneau (prioritaire sur la consigne d'étape).
+    public void ShowMessage(string text, float duration, bool log = true)
+    {
+        hintText = text;
+        hintUntil = Time.time + duration;
+        silent = !log;
+        Refresh();
+        silent = false;
+    }
+
+    public bool IsShowingMessage => hintText != "" && Time.time <= hintUntil;
+
+    private bool silent;
+
+    // Les astuces sur les ERREURS sont remplacées par les retours de l'assistant pédagogique quand il est présent.
+    private static readonly HashSet<string> errorHints = new HashSet<string>
+        { "orientation", "place", "wrong-piece", "wrong-side", "wrong-tool", "sequence", "sequence-croix", "over", "under" };
+
     private void Hint(string key, string text)
     {
+        if (assistant != null && errorHints.Contains(key)) return;
         if (!showHints) { Debug.Log("[Tuto] astuces désactivées (Show Hints décoché)."); return; }
         if (shown.Contains(key)) return;
         shown.Add(key);
@@ -325,6 +366,6 @@ public class TutorialGuide : MonoBehaviour
         if (!panel.gameObject.activeInHierarchy) panel.gameObject.SetActive(true);
         panel.text = text;
         // Le réglage de la clé change à chaque cran : on ne le recopie pas dans la console.
-        if (text != "" && !text.StartsWith("Clé réglée")) Debug.Log("[Tuto] affiché : " + text.Replace("\n", " "));
+        if (text != "" && !silent && !text.StartsWith("Clé réglée")) Debug.Log("[Tuto] affiché : " + text.Replace("\n", " "));
     }
 }

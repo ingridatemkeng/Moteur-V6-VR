@@ -89,6 +89,24 @@ public class SnapToTarget : MonoBehaviour
     public UnityEvent onWrongSide;           // posée alors que le moteur n'est pas dans le bon sens
 
     public bool IsPlaced => isPlaced;
+    public bool IsHeld => isHeld;
+
+    // État en direct (pendant qu'on tient la pièce) : utilisé par l'assistant pédagogique.
+    public float CurrentDistance => target != null ? Vector3.Distance(Center(transform), Center(target)) : float.PositiveInfinity;
+    public float CurrentAngle => target != null ? OrientationError() : 180f;
+    public bool PositionOk => CurrentDistance <= positionTolerance;
+    public bool AngleOk => CurrentAngle <= angleTolerance;
+
+    // Rotation (en coordonnées monde) qui manque pour que la pièce ait l'orientation de son fantôme.
+    public Quaternion MissingRotation()
+    {
+        if (target == null) return Quaternion.identity;
+        if (symmetry == Symmetry.Aucune) return target.rotation * Quaternion.Inverse(transform.rotation);
+        Vector3 a = transform.TransformDirection(symmetryAxis).normalized;
+        Vector3 b = target.TransformDirection(symmetryAxis).normalized;
+        if (symmetry == Symmetry.AxeEtRetournement && Vector3.Dot(a, b) < 0f) b = -b;
+        return Quaternion.FromToRotation(a, b);
+    }
     // Écarts mesurés au dernier relâchement (utilisés par le journal de session).
     public float LastDistance { get; private set; }
     public float LastAngle { get; private set; }

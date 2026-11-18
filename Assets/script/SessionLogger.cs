@@ -62,6 +62,9 @@ public class SessionLogger : MonoBehaviour
     private readonly List<string> pending = new List<string>();   // lignes écrites avant le choix du participant
     private const string PrefKey = "MoteurV6_participant";
 
+    // Prévient l'aide adaptative quand le participant est connu (son code).
+    public static event Action<string> ParticipantLocked;
+
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     void Start()
@@ -127,15 +130,20 @@ public class SessionLogger : MonoBehaviour
         }
         Debug.Log("[Guide] participant : " + participant);
 
-        if (!recording) { pending.Clear(); return; }
-        OpenFile();
-        if (writer != null)
+        if (recording)
         {
-            // Les lignes écrites avant le choix reçoivent maintenant la session et le participant.
-            foreach (string line in pending)
-                writer.WriteLine(line.Replace("{SESSION}", sessionId).Replace("{PARTICIPANT}", Clean(participant)));
+            OpenFile();
+            if (writer != null)
+            {
+                // Les lignes écrites avant le choix reçoivent maintenant la session et le participant.
+                foreach (string line in pending)
+                    writer.WriteLine(line.Replace("{SESSION}", sessionId).Replace("{PARTICIPANT}", Clean(participant)));
+            }
         }
         pending.Clear();
+
+        // Une fois le fichier ouvert : l'aide adaptative peut enregistrer la maîtrise de départ.
+        ParticipantLocked?.Invoke(participant);
     }
 
     private static string Code(int n) => "P" + n.ToString("00");
@@ -324,6 +332,9 @@ public class SessionLogger : MonoBehaviour
         errorsByType[evt] = errorsByType.TryGetValue(evt, out int n) ? n + 1 : 1;
         Write(evt, obj, v1, v2, withGrabDuration);
     }
+
+    // Pour les autres scripts (aide adaptative) : ajoute une ligne au journal.
+    public void LogEvent(string evt, string obj, string v1, string v2) => Write(evt, obj, v1, v2);
 
     // ---------- Bilan (étape S14) ----------
 

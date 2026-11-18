@@ -89,7 +89,9 @@ public class GhostSequence : MonoBehaviour
             Debug.Log("[Guide] étape en cours : " + current.name);
 
             // Couleur sur la pièce à prendre, et sur ses jumelles interchangeables encore à poser.
-            if (highlightCurrent)
+            // L'aide adaptative peut retirer la couleur quand la compétence est maîtrisée.
+            bool help = AdaptiveHelp.Instance == null || AdaptiveHelp.Instance.ShouldHighlight(current);
+            if (highlightCurrent && help)
             {
                 SetHighlight(current, true);
                 if (current.interchangeable)
