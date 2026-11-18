@@ -105,7 +105,11 @@ public class TutorialGuide : MonoBehaviour
             {
                 // S'il reste des pièces à poser, la consigne de l'étape suivante prend le relais.
                 if (!AllFinished()) return;
-                SetStep("Montage terminé, bravo !\nLe bas moteur est monté et serré."
+                // Bilan (étape S14 de la gamme) : temps, erreurs, rappel des contrôles.
+                SessionLogger logger = FindFirstObjectByType<SessionLogger>(FindObjectsInactive.Include);
+                SetStep("Montage terminé, bravo !\n"
+                        + (logger != null ? logger.Summary() + "\n" : "")
+                        + "À contrôler en atelier : rotation libre du vilebrequin."
                         + (hasFlipper ? "\nAppuyez sur Y pour retourner le moteur." : ""));
             });
 

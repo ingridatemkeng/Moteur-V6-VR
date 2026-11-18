@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -10,6 +11,7 @@ using UnityEngine;
 // - Une ligne par événement : pièce attrapée, pièce posée, erreur, astuce affichée, serrage...
 // - Un fichier par session, écrit au fur et à mesure (rien n'est perdu si l'application est fermée).
 // - Il se branche tout seul sur les pièces, les outils et les vis de la scène : rien à câbler.
+// - Il tient aussi les compteurs du BILAN de fin de montage (étape S14 de la gamme), même sans enregistrer.
 //
 // À placer sur un objet de la scène (ex. « Journal »). Renseigner Participant avant chaque passage.
 // Fichiers : dossier « logs » de l'application
@@ -40,12 +42,26 @@ public class SessionLogger : MonoBehaviour
     private GhostSequence sequence;
     private bool stepTouched;         // une pièce a déjà été attrapée pendant cette étape
 
+    // Bilan de fin de montage.
+    private float montageStart = -1f; // première validation du poste
+    private int totalErrors;
+    private int totalHints;
+    private readonly Dictionary<string, int> errorsByType = new Dictionary<string, int>();
+
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     void Start()
     {
-        if (!recording) return;
+        if (recording) OpenFile();
 
+        startTime = stepStartTime = Time.time;
+        tutorial = FindFirstObjectByType<TutorialGuide>(FindObjectsInactive.Include);
+        Subscribe();
+        Write("session_ouverte", Application.version, "", "");
+    }
+
+    private void OpenFile()
+    {
         sessionId = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         string dir = Path.Combine(Application.persistentDataPath, "logs");
         string path = Path.Combine(dir, "session_" + sessionId + "_" + participant + ".csv");
@@ -60,12 +76,12 @@ public class SessionLogger : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogWarning("[Guide] journal de session impossible à créer : " + e.Message);
-            return;
+            writer = null;
         }
+    }
 
-        startTime = stepStartTime = Time.time;
-        tutorial = FindFirstObjectByType<TutorialGuide>(FindObjectsInactive.Include);
-
+    private void Subscribe()
+    {
         // Poste et séquence.
         var placer = FindFirstObjectByType<WorkstationPlacer>(FindObjectsInactive.Include);
         // Le temps n'est jamais remis à zéro : le poste peut être replacé (B puis A) en cours de montage.
@@ -73,6 +89,7 @@ public class SessionLogger : MonoBehaviour
         {
             // Le temps passé à placer le poste ne compte pas dans la première étape.
             if (!stepTouched) stepStartTime = Time.time;
+            if (montageStart < 0f) montageStart = Time.time;
             Write("poste_verrouille", "", "", "");
         });
 
@@ -137,8 +154,6 @@ public class SessionLogger : MonoBehaviour
         if (flipper != null) flipper.onFlipped.AddListener(() => Write("moteur_retourne", flipper.IsFlipped ? "haut" : "bas", "", ""));
 
         TutorialGuide.HintShown += OnHintShown;
-
-        Write("session_ouverte", Application.version, "", "");
     }
 
     void OnDestroy()
@@ -181,6 +196,7 @@ public class SessionLogger : MonoBehaviour
     private void OnHintShown(string key)
     {
         hintsInStep++;
+        totalHints++;
         Write("astuce_affichee", key, "", "");
     }
 
@@ -213,7 +229,45 @@ public class SessionLogger : MonoBehaviour
     private void Error(string evt, string obj, string v1, string v2, bool withGrabDuration = false)
     {
         errorsInStep++;
+        totalErrors++;
+        errorsByType[evt] = errorsByType.TryGetValue(evt, out int n) ? n + 1 : 1;
         Write(evt, obj, v1, v2, withGrabDuration);
+    }
+
+    // ---------- Bilan (étape S14) ----------
+
+    // Texte du bilan affiché à la fin du montage, et ligne « bilan » dans le journal.
+    public string Summary()
+    {
+        float start = montageStart >= 0f ? montageStart : startTime;
+        float seconds = Mathf.Max(0f, Mathf.Max(Time.time, lastTime) - start);
+        int min = Mathf.FloorToInt(seconds / 60f);
+        int sec = Mathf.FloorToInt(seconds % 60f);
+
+        string details = "";
+        foreach (var kv in errorsByType)
+            details += (details == "" ? "" : ", ") + ErrorLabel(kv.Key) + " " + kv.Value;
+
+        Write("bilan", "", Num(seconds), totalErrors.ToString(Inv));
+
+        return "Temps : " + min + " min " + sec.ToString("00") + " s\n"
+               + "Erreurs : " + totalErrors + (details == "" ? "" : " (" + details + ")") + "\n"
+               + "Astuces affichées : " + totalHints;
+    }
+
+    private static string ErrorLabel(string evt)
+    {
+        switch (evt)
+        {
+            case "erreur_orientation":        return "orientation";
+            case "erreur_endroit":            return "emplacement";
+            case "erreur_mauvaise_piece":     return "mauvaise pièce";
+            case "erreur_mauvais_outil":      return "mauvais outil";
+            case "erreur_sur_serrage":        return "sur-serrage";
+            case "erreur_couple_insuffisant": return "couple insuffisant";
+            case "erreur_hors_sequence":      return "ordre de serrage";
+            default:                          return evt.Replace("erreur_", "");
+        }
     }
 
     // ---------- Écriture ----------

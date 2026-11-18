@@ -7451,12 +7451,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 584322428}
   targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 120
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -12775,12 +12775,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 1050795487}
   targetTorque: 25
   torqueTolerance: 2
-  degreesToReachTorque: 120
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -21213,12 +21213,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 546132102}
   targetTorque: 23
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -21708,12 +21708,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 2069547014}
   targetTorque: 23
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -22081,12 +22081,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 902434384}
   targetTorque: 23
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
@@ -22860,12 +22860,12 @@ MonoBehaviour:
   workPointOverride: {fileID: 395345739}
   targetTorque: 23
   torqueTolerance: 2
-  degreesToReachTorque: 360
+  degreesToReachTorque: 90
   angleStep: 0
   targetAngle: 90
   angleTolerance: 10
   postClickGain: 0.1
-  maxDegreesAfterClick: 60
+  maxDegreesAfterClick: 90
   haptics: 1
   autoDetectAxis: 1
   axisShape: 1
