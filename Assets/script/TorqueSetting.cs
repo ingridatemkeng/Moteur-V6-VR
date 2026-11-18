@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -7,6 +9,9 @@ using TMPro;
 //
 // À placer sur la clé, à côté du composant Tool.
 // Pendant qu'on tient la clé : joystick haut / bas (n'importe quelle manette) = + / - le couple.
+// La valeur s'affiche sur le panneau de consignes (via le tutoriel) : pas de texte sur la clé,
+// car un texte 3D transparent fait clignoter la scène en réalité mixte.
+// Chaque cran est ressenti par une petite vibration de la manette.
 
 public class TorqueSetting : MonoBehaviour
 {
@@ -19,9 +24,15 @@ public class TorqueSetting : MonoBehaviour
     [Tooltip("Délai (s) entre deux crans quand on maintient le joystick.")]
     public float repeatDelay = 0.15f;
 
-    [Header("Affichage (optionnel)")]
-    [Tooltip("Texte TextMeshPro fixé sur la clé, qui affiche la valeur réglée.")]
+    [Header("Affichage (optionnel, déconseillé en réalité mixte)")]
+    [Tooltip("Laisser VIDE : la valeur s'affiche sur le panneau de consignes. Un texte sur la clé fait clignoter la scène.")]
     public TMP_Text display;
+
+    [Header("Ressenti")]
+    public bool hapticTicks = true;
+
+    // Prévient le tutoriel (panneau de consignes) à chaque cran : (clé, nouvelle valeur).
+    public static event Action<TorqueSetting, float> ValueChanged;
 
     private Tool tool;
     private float nextStepTime;
@@ -50,6 +61,8 @@ public class TorqueSetting : MonoBehaviour
                 changed = true;
                 lastChangeTime = Time.time;
                 UpdateDisplay();
+                ValueChanged?.Invoke(this, value);
+                if (hapticTicks) StartCoroutine(Tick());
             }
             nextStepTime = Time.time + repeatDelay;
         }
@@ -60,6 +73,16 @@ public class TorqueSetting : MonoBehaviour
             changed = false;
             Debug.Log("[Outil] clé dynamométrique réglée sur " + value.ToString("F0") + " N·m.");
         }
+    }
+
+    // Petit « cran » ressenti dans les deux manettes.
+    private IEnumerator Tick()
+    {
+        OVRInput.SetControllerVibration(1f, 0.25f, OVRInput.Controller.RTouch);
+        OVRInput.SetControllerVibration(1f, 0.25f, OVRInput.Controller.LTouch);
+        yield return new WaitForSeconds(0.03f);
+        OVRInput.SetControllerVibration(0f, 0f, OVRInput.Controller.RTouch);
+        OVRInput.SetControllerVibration(0f, 0f, OVRInput.Controller.LTouch);
     }
 
     private void UpdateDisplay()

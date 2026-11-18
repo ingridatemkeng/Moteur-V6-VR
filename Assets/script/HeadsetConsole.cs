@@ -30,7 +30,7 @@ public class HeadsetConsole : MonoBehaviour
     private bool visible;
     private bool dirty;
 
-    void OnEnable() { Application.logMessageReceived += OnLog; }
+    void OnEnable()  { Application.logMessageReceived += OnLog; }
     void OnDisable() { Application.logMessageReceived -= OnLog; }
 
     void Start()
@@ -90,7 +90,7 @@ public class HeadsetConsole : MonoBehaviour
         if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) color = "#FF5555";
         else if (type == LogType.Warning) color = "#FFD24D";
         else if (message.Contains("correct") || message.Contains("validé") || message.Contains("verrouill")) color = "#5CFF7A";
-        else if (message.Contains("mauvais") || message.Contains("MAUVAISE") || message.Contains("SUR-SERRAGE") || message.Contains("HORS SEQUENCE")) color = "#FF5555";
+        else if (message.Contains("mauvais") || message.Contains("MAUVAISE") ||message.Contains("SUR-SERRAGE") || message.Contains("HORS SEQUENCE")) color = "#FF5555";
         else if (message.Contains("pas encore") || message.Contains("insuffisant")) color = "#FFD24D";
 
         return "<color=#888888>" + time + "</color> <color=" + color + ">" + message + "</color>";

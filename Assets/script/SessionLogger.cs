@@ -36,6 +36,7 @@ public class SessionLogger : MonoBehaviour
     private int errorsInStep;
     private int hintsInStep;
     private TutorialGuide tutorial;
+    private float lastTime;           // Time.time peut revenir à 0 quand on arrête le Play : on garde la dernière valeur
     private GhostSequence sequence;
     private bool stepTouched;         // une pièce a déjà été attrapée pendant cette étape
 
@@ -127,6 +128,10 @@ public class SessionLogger : MonoBehaviour
             group.onAllTightened.AddListener(() => Write("serrage_termine", group.name, "", ""));
         }
 
+        // Réglage des clés dynamométriques (noté quand l'apprenant a fini de régler).
+        foreach (var setting in FindObjectsByType<TorqueSetting>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            StartCoroutine(WatchSetting(setting));
+
         // Retournement du moteur et astuces du tutoriel.
         var flipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include);
         if (flipper != null) flipper.onFlipped.AddListener(() => Write("moteur_retourne", flipper.IsFlipped ? "haut" : "bas", "", ""));
@@ -189,6 +194,22 @@ public class SessionLogger : MonoBehaviour
         stepTouched = false;
     }
 
+    private IEnumerator WatchSetting(TorqueSetting s)
+    {
+        float last = s.value;
+        float changedAt = -1f;
+        while (s != null)
+        {
+            if (!Mathf.Approximately(s.value, last)) { last = s.value; changedAt = Time.time; }
+            if (changedAt > 0f && Time.time - changedAt > 0.8f)
+            {
+                changedAt = -1f;
+                Write("cle_reglee", s.name, Num(s.value), "");
+            }
+            yield return null;
+        }
+    }
+
     private void Error(string evt, string obj, string v1, string v2, bool withGrabDuration = false)
     {
         errorsInStep++;
@@ -200,20 +221,22 @@ public class SessionLogger : MonoBehaviour
     private void Write(string evt, string obj, string v1, string v2, bool withGrabDuration = false)
     {
         if (writer == null) return;
+        float now = Mathf.Max(Time.time, lastTime);
+        lastTime = now;
         try
         {
             writer.WriteLine(string.Join(";",
                 sessionId,
                 Clean(participant),
-                Num(Time.time - startTime),
+                Num(now - startTime),
                 (stepIndex + 1).ToString(Inv),
                 Clean(stepPiece),
-                Num(Time.time - stepStartTime),
+                Num(now - stepStartTime),
                 evt,
                 Clean(obj),
                 v1,
                 v2,
-                withGrabDuration ? Num(Time.time - grabTime) : "",
+                withGrabDuration ? Num(now - grabTime) : "",
                 errorsInStep.ToString(Inv),
                 hintsInStep.ToString(Inv),
                 (tutorial != null && tutorial.showHints) ? "1" : "0"));

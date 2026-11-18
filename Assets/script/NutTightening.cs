@@ -71,6 +71,7 @@ public class NutTightening : ToolTarget
     private float degreesAfterClick;
     private bool overWarned;
     private bool angleReachedDone;
+    private float lastUnderClick = -1f;      // réglage de la clé lors du dernier « couple insuffisant »
     private TorqueSetting setting;            // réglage de la clé engagée (null = clé non réglable)
     // Pièces exportées avec leur pivot loin du maillage (à l'origine du moteur) :
     // la vis doit alors tourner autour du centre de son maillage, pas autour de son pivot.
@@ -247,9 +248,19 @@ public class NutTightening : ToolTarget
                 {
                     // La clé a cliqué trop tôt : elle était réglée trop bas.
                     HadError = true;
-                    Log("COUPLE INSUFFISANT : clé réglée à " + ClickTorque.ToString("F0") + " N·m au lieu de "
-                        + targetTorque.ToString("F0") + " N·m. Réglez la clé et reprenez.");
-                    onUnderTightened.Invoke();
+                    if (Mathf.Approximately(lastUnderClick, ClickTorque))
+                    {
+                        // Même réglage qu'à l'essai précédent : on rappelle la consigne sans compter une nouvelle erreur.
+                        Log("la clé est toujours réglée à " + ClickTorque.ToString("F0") + " N·m : réglez-la à "
+                            + targetTorque.ToString("F0") + " N·m (joystick haut/bas en la tenant).");
+                    }
+                    else
+                    {
+                        lastUnderClick = ClickTorque;
+                        Log("COUPLE INSUFFISANT : clé réglée à " + ClickTorque.ToString("F0") + " N·m au lieu de "
+                            + targetTorque.ToString("F0") + " N·m. Réglez la clé (joystick haut/bas en la tenant) et reprenez.");
+                        onUnderTightened.Invoke();
+                    }
                     clickDone = false;            // on peut reprendre après avoir réglé la clé
                     degreesAfterClick = 0f;
                     overWarned = false;

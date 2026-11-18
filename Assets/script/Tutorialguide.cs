@@ -87,6 +87,9 @@ public class TutorialGuide : MonoBehaviour
                 "Ce n'est pas le bon outil (voir la console).\nReposez-le et prenez " + ExpectedToolText() + "."));
         }
 
+        // Réglage de la clé dynamométrique : la valeur s'affiche sur le panneau pendant qu'on règle.
+        TorqueSetting.ValueChanged += OnTorqueSettingChanged;
+
         // Serrage : un ou plusieurs groupes (bielle, carter...).
         bool hasFlipper = FindFirstObjectByType<EngineFlipper>(FindObjectsInactive.Include) != null;
         foreach (var g in groups)
@@ -96,6 +99,7 @@ public class TutorialGuide : MonoBehaviour
                 SetStep("Serrage" + (string.IsNullOrEmpty(group.displayName) ? "" : " " + group.displayName)
                         + " : prenez " + ToolText(group) + " sur l'établi\net serrez chaque vis au couple"
                         + TorqueText(group) + "."
+                        + (NeedsSetting(group) ? "\nRéglez d'abord la clé : en la tenant, joystick haut / bas." : "")
                         + (group.crossPattern ? "\nSerrez en croix : après une vis, passez à la vis opposée." : "")));
             group.onAllTightened.AddListener(() =>
             {
@@ -127,7 +131,7 @@ public class TutorialGuide : MonoBehaviour
                 f.onOverTightened.AddListener(() => Hint("over",
                     "Sur-serrage : relâchez dès que vous sentez\nla vibration du clic."));
                 f.onUnderTightened.AddListener(() => Hint("under",
-                    "Couple insuffisant : vérifiez le réglage de la clé\npuis reprenez le serrage."));
+                    "Couple insuffisant : la clé est réglée trop bas.\nEn la tenant, poussez le joystick vers le haut\njusqu'à la valeur demandée, puis reprenez."));
             }
         }
     }
@@ -135,6 +139,22 @@ public class TutorialGuide : MonoBehaviour
     void OnDestroy()
     {
         if (sequence != null) sequence.StepChanged -= OnStepChanged;
+        TorqueSetting.ValueChanged -= OnTorqueSettingChanged;
+    }
+
+    private void OnTorqueSettingChanged(TorqueSetting setting, float value)
+    {
+        // Consigne du serrage en cours (s'il y en a un), pour que l'apprenant sache où s'arrêter.
+        string target = "";
+        TighteningGroup g = ActiveGroup();
+        if (g != null)
+            foreach (var f in g.fasteners)
+                if (f != null) { target = "\nValeur demandée : " + f.targetTorque.ToString("F0") + " N·m"; break; }
+
+        // Affichage temporaire (pas une astuce « une seule fois ») : il suit chaque cran.
+        hintText = "Clé réglée sur " + value.ToString("F0") + " N·m" + target;
+        hintUntil = Time.time + 2.5f;
+        Refresh();
     }
 
     // ---------- Déroulé ----------
@@ -182,6 +202,20 @@ public class TutorialGuide : MonoBehaviour
             foreach (var f in g.fasteners)
                 if (f != null) return ToolNames.WithArticle(f.requiredTool);
         return "l'outil adapté";
+    }
+
+    // La clé attendue par ce groupe est-elle une clé réglable (composant TorqueSetting) ?
+    private static bool NeedsSetting(TighteningGroup g)
+    {
+        if (g == null) return false;
+        ToolType expected = ToolType.CleDynamometrique;
+        bool found = false;
+        foreach (var f in g.fasteners)
+            if (f != null) { expected = f.requiredTool; found = true; break; }
+        if (!found) return false;
+        foreach (var t in FindObjectsByType<Tool>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (t.type == expected && t.GetComponent<TorqueSetting>() != null) return true;
+        return false;
     }
 
     private static string TorqueText(TighteningGroup g)
@@ -275,6 +309,7 @@ public class TutorialGuide : MonoBehaviour
         if (placer != null && placer.CurrentState != WorkstationPlacer.State.Verrouille) return;
         if (!panel.gameObject.activeInHierarchy) panel.gameObject.SetActive(true);
         panel.text = text;
-        if (text != "") Debug.Log("[Tuto] affiché : " + text.Replace("\n", " "));
+        // Le réglage de la clé change à chaque cran : on ne le recopie pas dans la console.
+        if (text != "" && !text.StartsWith("Clé réglée")) Debug.Log("[Tuto] affiché : " + text.Replace("\n", " "));
     }
 }

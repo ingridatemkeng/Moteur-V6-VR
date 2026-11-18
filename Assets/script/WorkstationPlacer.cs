@@ -2,37 +2,37 @@ using UnityEngine;
 using UnityEngine.Events;
 using TMPro;
 
-// Démarrage de l'expérience en réalité mixte :
-// 1. Attente      : seul l'environnement réel est visible, un message invite à appuyer sur A.
-// 2. Positionnement : le poste apparaît et suit la manette droite ; on la pose sur une surface, A.
+// DÃ©marrage de l'expÃ©rience en rÃ©alitÃ© mixte :
+// 1. Attente      : seul l'environnement rÃ©el est visible, un message invite Ã  appuyer sur A.
+// 2. Positionnement : le poste apparaÃ®t et suit la manette droite ; on la pose sur une surface, A.
 // 3. Ajustement   : le joystick tourne le poste ; A valide, B recommence.
-// 4. Verrouillé   : l'exercice peut commencer ; B permet de replacer le poste.
-// Tout le poste (moteur, pièces, cibles, clé) se déplace ensemble.
+// 4. VerrouillÃ©   : l'exercice peut commencer ; B permet de replacer le poste.
+// Tout le poste (moteur, piÃ¨ces, cibles, clÃ©) se dÃ©place ensemble.
 
 public class WorkstationPlacer : MonoBehaviour
 {
     public enum State { Attente, Positionnement, Ajustement, Verrouille }
 
-    [Header("Références")]
-    [Tooltip("Objet racine qui contient tout l'exercice. Rotation (0,0,0), échelle 1.")]
+    [Header("RÃ©fÃ©rences")]
+    [Tooltip("Objet racine qui contient tout l'exercice. Rotation (0,0,0), Ã©chelle 1.")]
     public Transform poste;
-    [Tooltip("Le Mesh Renderer du bloc moteur : son dessous sera posé sur la surface.")]
+    [Tooltip("Le Mesh Renderer du bloc moteur : son dessous sera posÃ© sur la surface.")]
     public Renderer baseRenderer;
     [Tooltip("[BuildingBlock] Camera Rig > TrackingSpace > RightHandAnchor > RightControllerAnchor")]
     public Transform controllerAnchor;
     [Tooltip("[BuildingBlock] Camera Rig > TrackingSpace > CenterEyeAnchor")]
     public Transform head;
 
-    [Header("Contenu masqué au démarrage")]
-    [Tooltip("Objets cachés jusqu'à l'appui sur A. Laisser vide = tous les enfants du poste.")]
+    [Header("Contenu masquÃ© au dÃ©marrage")]
+    [Tooltip("Objets cachÃ©s jusqu'Ã  l'appui sur A. Laisser vide = tous les enfants du poste.")]
     public GameObject[] content;
 
-    [Header("Réglages du placement")]
-    [Tooltip("Correction de hauteur (m) : le repère de la manette est un peu au-dessus de la table quand elle est posée.")]
+    [Header("RÃ©glages du placement")]
+    [Tooltip("Correction de hauteur (m) : le repÃ¨re de la manette est un peu au-dessus de la table quand elle est posÃ©e.")]
     public float heightOffset = -0.03f;
-    [Tooltip("Vitesse de rotation au joystick (degrés/seconde).")]
+    [Tooltip("Vitesse de rotation au joystick (degrÃ©s/seconde).")]
     public float rotationSpeed = 90f;
-    [Tooltip("Rotation ajoutée pour choisir quelle face du moteur est tournée vers l'utilisateur (0, 90, 180, 270).")]
+    [Tooltip("Rotation ajoutÃ©e pour choisir quelle face du moteur est tournÃ©e vers l'utilisateur (0, 90, 180, 270).")]
     public float initialYawOffset = 0f;
     public OVRInput.Controller controller = OVRInput.Controller.RTouch;
 
@@ -40,22 +40,22 @@ public class WorkstationPlacer : MonoBehaviour
     public TMP_Text instructions;
     [Tooltip("Distance du panneau devant les yeux (m).")]
     public float panelDistance = 0.8f;
-    [Tooltip("Le panneau est placé un peu sous le regard (m).")]
+    [Tooltip("Le panneau est placÃ© un peu sous le regard (m).")]
     public float panelDrop = 0.1f;
-    [Tooltip("Vitesse à laquelle le panneau rattrape le regard (plus grand = plus rapide).")]
+    [Tooltip("Vitesse Ã  laquelle le panneau rattrape le regard (plus grand = plus rapide).")]
     public float panelFollowSpeed = 3f;
 
-    [Header("Réactions")]
-    public UnityEvent onPlacementConfirmed;   // ex. démarrer l'exercice, lancer l'enregistrement
+    [Header("RÃ©actions")]
+    public UnityEvent onPlacementConfirmed;   // ex. dÃ©marrer l'exercice, lancer l'enregistrement
 
     public State CurrentState { get; private set; }
 
-    private Vector3 localBottomCenter;  // dessous du bloc, exprimé dans le repère du poste
+    private Vector3 localBottomCenter;  // dessous du bloc, exprimÃ© dans le repÃ¨re du poste
     private Vector3 placedPoint;
     private float yaw;
     private bool panelInitialized;
 
-    // À appeler quand la forme du dessous a changé (ex. moteur retourné) :
+    // Ã€ appeler quand la forme du dessous a changÃ© (ex. moteur retournÃ©) :
     // le prochain placement posera le nouveau dessous du bloc sur la table.
     public void RecomputeBottom()
     {
@@ -69,7 +69,7 @@ public class WorkstationPlacer : MonoBehaviour
         if (poste == null) poste = transform;
 
         // 1) On mesure le dessous du bloc AVANT de masquer quoi que ce soit
-        //    (un objet masqué a une boîte englobante vide).
+        //    (un objet masquÃ© a une boÃ®te englobante vide).
         if (baseRenderer != null)
         {
             Bounds b = baseRenderer.bounds;
@@ -77,18 +77,18 @@ public class WorkstationPlacer : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[Placement] Base Renderer non renseigné : le poste sera placé par son origine.");
+            Debug.LogWarning("[Placement] Base Renderer non renseignÃ© : le poste sera placÃ© par son origine.");
             localBottomCenter = Vector3.zero;
         }
 
-        // 2) Liste du contenu à masquer : par défaut, tous les enfants du poste.
+        // 2) Liste du contenu Ã  masquer : par dÃ©faut, tous les enfants du poste.
         if (content == null || content.Length == 0)
         {
             content = new GameObject[poste.childCount];
             for (int i = 0; i < poste.childCount; i++) content[i] = poste.GetChild(i).gameObject;
         }
 
-        // 3) Au lancement, on ne voit que l'environnement réel.
+        // 3) Au lancement, on ne voit que l'environnement rÃ©el.
         SetContentVisible(false);
         EnterWaiting();
     }
@@ -108,7 +108,7 @@ public class WorkstationPlacer : MonoBehaviour
                 if (pressA)
                 {
                     // On place le poste sur la manette AVANT de l'afficher,
-                    // pour éviter qu'il apparaisse une image à son ancienne position.
+                    // pour Ã©viter qu'il apparaisse une image Ã  son ancienne position.
                     UpdatePositioningPose();
                     SetContentVisible(true);
                     EnterPositioning();
@@ -146,13 +146,13 @@ public class WorkstationPlacer : MonoBehaviour
         }
     }
 
-    // ---------- États ----------
+    // ---------- Ã‰tats ----------
 
     private void EnterWaiting()
     {
         CurrentState = State.Attente;
-        SetText("Bienvenue\nAppuyez sur A pour faire apparaître\nle poste de montage");
-        Debug.Log("[Placement] attente : appuyez sur A pour faire apparaître le poste.");
+        SetText("Bienvenue\nAppuyez sur A pour faire apparaÃ®tre\nle poste de montage");
+        Debug.Log("[Placement] attente : appuyez sur A pour faire apparaÃ®tre le poste.");
     }
 
     private void EnterPositioning()
@@ -166,7 +166,7 @@ public class WorkstationPlacer : MonoBehaviour
     {
         CurrentState = State.Verrouille;
         SetText("");
-        Debug.Log("[Placement] poste verrouillé. B pour le replacer.");
+        Debug.Log("[Placement] poste verrouillÃ©. B pour le replacer.");
         onPlacementConfirmed.Invoke();
     }
 
@@ -179,7 +179,7 @@ public class WorkstationPlacer : MonoBehaviour
         Apply();
     }
 
-    // Oriente le poste face à l'utilisateur (rotation autour de la verticale uniquement)
+    // Oriente le poste face Ã  l'utilisateur (rotation autour de la verticale uniquement)
     // et pose le dessous du bloc exactement sur le point choisi.
     private void Apply()
     {
@@ -202,8 +202,8 @@ public class WorkstationPlacer : MonoBehaviour
 
     // ---------- Panneau de consignes ----------
 
-    // Le panneau suit le regard en douceur (« lazy follow ») : il reste devant l'utilisateur
-    // sans être collé à sa tête, ce qui est plus confortable en casque.
+    // Le panneau suit le regard en douceur (Â« lazy follow Â») : il reste devant l'utilisateur
+    // sans Ãªtre collÃ© Ã  sa tÃªte, ce qui est plus confortable en casque.
     private void FollowPanel()
     {
         if (instructions == null) return;
@@ -218,7 +218,7 @@ public class WorkstationPlacer : MonoBehaviour
 
         if (!panelInitialized)
         {
-            panel.position = targetPos;   // première image : on place le panneau directement
+            panel.position = targetPos;   // premiÃ¨re image : on place le panneau directement
             panelInitialized = true;
         }
         else
@@ -228,7 +228,7 @@ public class WorkstationPlacer : MonoBehaviour
         }
 
         // Le texte TextMeshPro se lit en regardant dans la direction de son axe Z :
-        // on l'oriente donc dans la direction « tête -> panneau ».
+        // on l'oriente donc dans la direction Â« tÃªte -> panneau Â».
         Vector3 look = panel.position - head.position;
         look.y = 0f;
         if (look.sqrMagnitude > 0.0001f) panel.rotation = Quaternion.LookRotation(look);
