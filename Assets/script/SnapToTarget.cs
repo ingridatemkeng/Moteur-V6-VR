@@ -87,6 +87,7 @@ public class SnapToTarget : MonoBehaviour
     public UnityEvent onGrab;                // pièce attrapée (utilisé par le tutoriel)
     public UnityEvent onWrongPiece;          // posée sur l'emplacement d'une AUTRE sorte de pièce
     public UnityEvent onWrongSide;           // posée alors que le moteur n'est pas dans le bon sens
+    public UnityEvent onWrongOrder;          // posée trop tôt : la gamme demande d'abord d'autres pièces
 
     public bool IsPlaced => isPlaced;
     public bool IsHeld => isHeld;
@@ -218,6 +219,16 @@ public class SnapToTarget : MonoBehaviour
             return;
         }
 
+        // Erreur d'ordre : la pièce est à sa place, mais la gamme demande d'abord d'autres pièces (GhostSequence).
+        GhostSequence gamme = GhostSequence.Instance;
+        if (gamme != null && distance <= positionTolerance && !gamme.IsAvailable(this))
+        {
+            string missing = gamme.MissingText(this);
+            Debug.Log(name + " : ORDRE : trop tôt" + (missing != "" ? ", il faut d'abord : " + missing : "") + ".");
+            onWrongOrder.Invoke();
+            if (gamme.orderErrorPolicy == GhostSequence.OrderErrorPolicy.Bloquer || !gamme.FreeOrder) return;
+        }
+
         // Cas 1 : bon endroit ET bonne orientation -> montage correct
         if (distance <= positionTolerance && angle <= angleTolerance)
         {
@@ -265,7 +276,10 @@ public class SnapToTarget : MonoBehaviour
         float best = positionTolerance;
         foreach (var p in all)
         {
-            if (p == this || p == null || p.isPlaced || p.target == null) continue;
+            if (p == this || p == null || p.isPlaced || p.target == null || !p.gameObject.activeInHierarchy) continue;
+            // Seuls comptent les emplacements que la gamme propose maintenant : relâcher le piston près du futur
+            // emplacement de l'axe (qui est dans le piston) n'est pas une « mauvaise pièce ».
+            if (GhostSequence.Instance != null && !GhostSequence.Instance.IsAvailable(p)) continue;
             float d = Vector3.Distance(Center(transform), Center(p.target));
             if (d <= best) { best = d; other = p; }
         }

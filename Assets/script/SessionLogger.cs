@@ -209,6 +209,7 @@ public class SessionLogger : MonoBehaviour
             p.onWrongPiece.AddListener(() => Error("erreur_mauvaise_piece", p.name, Cm(p.LastDistance), Deg(p.LastAngle), true));
             p.onUnsnapped.AddListener(() => Write("piece_retiree", p.name, "", ""));
             p.onWrongSide.AddListener(() => Error("erreur_sens_moteur", p.name, "", "", true));
+            p.onWrongOrder.AddListener(() => Error("erreur_ordre", p.name, Cm(p.LastDistance), Deg(p.LastAngle), true));
         }
 
         // Outils.
@@ -369,6 +370,7 @@ public class SessionLogger : MonoBehaviour
             case "erreur_couple_insuffisant": return "couple insuffisant";
             case "erreur_hors_sequence":      return "ordre de serrage";
             case "erreur_sens_moteur":        return "sens du moteur";
+            case "erreur_ordre":              return "ordre de montage";
             default:                          return evt.Replace("erreur_", "");
         }
     }

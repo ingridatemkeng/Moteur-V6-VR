@@ -64,6 +64,7 @@ public class PedagogicalAssistant : MonoBehaviour
     private SnapToTarget held;
     private bool idleShown, holdShown;
     private float nextCoachTime;
+    private string lastCoachText = "";
     private readonly HashSet<SnapToTarget> anticipatedThisStep = new HashSet<SnapToTarget>();
 
     // ---------- Démarrage ----------
@@ -92,6 +93,7 @@ public class PedagogicalAssistant : MonoBehaviour
             p.onWrongPlace.AddListener(() => { if (p.LastDistance <= 0.10f) Error(p, "endroit"); else held = null; });
             p.onWrongPiece.AddListener(() => Error(p, "mauvaise_piece"));
             p.onWrongSide.AddListener(() => Error(p, "sens_moteur"));
+            p.onWrongOrder.AddListener(() => OrderError(p));
         }
 
         foreach (var tool in FindObjectsByType<Tool>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -135,14 +137,15 @@ public class PedagogicalAssistant : MonoBehaviour
 
         if (!anticipation || anticipatedThisStep.Contains(p)) return;
 
-        // Pièce qui n'est pas celle de l'étape : on prévient AVANT qu'elle soit posée au mauvais endroit.
-        SnapToTarget cur = sequence != null ? sequence.Current : null;
-        if (cur != null && !p.IsPlaced && p != cur && !(p.interchangeable && p.Family == cur.Family))
+        // Pièce qui ne peut pas encore être posée : on prévient AVANT l'erreur d'ordre.
+        if (sequence != null && !p.IsPlaced && sequence.IsInGamme(p) && !sequence.IsAvailable(p))
         {
             anticipatedThisStep.Add(p);
-            Show("Ce n'est pas la pièce de cette étape.\nPrenez " + TutorialGuide.FriendlyName(cur.name)
-                 + " (colorée en orange).", feedbackDuration);
-            Record("anticipe", AdaptiveHelp.SkillOf(p.name), "pas_etape");
+            string missing = sequence.MissingText(p);
+            Show((sequence.FreeOrder ? "Pas encore : cette pièce vient plus tard." : "Ce n'est pas la pièce de cette étape.")
+                 + (missing != "" ? "\nD'abord : " + missing + "." : "")
+                 + "\nLes pièces possibles sont colorées en orange.", feedbackDuration);
+            Record("anticipe", AdaptiveHelp.SkillOf(p.name), "pas_disponible");
             return;
         }
 
@@ -169,6 +172,31 @@ public class PedagogicalAssistant : MonoBehaviour
             skill = AdaptiveHelp.SkillOf(sequence.Current.name);
         ErrorSkill(skill, error, p.name);
         held = null;
+    }
+
+    // Erreur d'ordre : le retour cite ce qu'il fallait faire avant.
+    private void OrderError(SnapToTarget p)
+    {
+        Activity();
+        held = null;
+        if (!errorFeedback) return;
+        string key = "ordre_montage/" + p.name;
+        repeatCount = key == lastErrorKey ? repeatCount + 1 : 1;
+        lastErrorKey = key;
+
+        Entry e = Find("ordre_montage", "ordre") ?? Find("*", "ordre");
+        string missing = sequence != null ? sequence.MissingText(p) : "";
+        bool blocked = sequence == null || sequence.orderErrorPolicy == GhostSequence.OrderErrorPolicy.Bloquer || !sequence.FreeOrder;
+        AdaptiveHelp ah = AdaptiveHelp.Instance;
+        AdaptiveHelp.Level level = ah != null ? ah.LevelOf("ordre_montage") : AdaptiveHelp.Level.Debutant;
+        if (repeatCount >= 2) level = AdaptiveHelp.Level.Debutant;
+
+        string text = (e != null ? e.what : "Trop tôt pour cette pièce.")
+                      + (blocked ? "" : " Elle est posée, mais hors gamme.");
+        if (level == AdaptiveHelp.Level.Debutant && e != null && !string.IsNullOrEmpty(e.why)) text += "\nPourquoi : " + e.why;
+        if (missing != "") text += "\nD'abord : " + missing + ".";
+        Show(text, feedbackDuration);
+        Record("erreur", "ordre_montage:ordre", ((int)level).ToString() + (repeatCount >= 2 ? "_repetee" : ""));
     }
 
     private void ErrorSkill(string skill, string error, string obj)
@@ -245,10 +273,16 @@ public class PedagogicalAssistant : MonoBehaviour
         if (p.PositionOk && p.AngleOk) text = "C'est bon : relâchez la gâchette.";
         else if (!p.AngleOk) text = RotationAdvice(p.MissingRotation(), p.CurrentAngle)
                                     + (p.PositionOk ? "" : "\nPuis amenez-la sur le fantôme.");
-        else text = "Bonne orientation. Rapprochez-la du fantôme (" + Mathf.CeilToInt(d * 100f) + " cm).";
+        else text = "Bonne orientation. Rapprochez-la du fantôme.";
 
-        // Message court qui se renouvelle tant qu'on tient la pièce, et disparaît quand on la lâche.
-        tutorial.ShowMessage(text, 0.6f, false);
+        // Le texte du panneau n'est réécrit que quand la consigne CHANGE : réécrire un texte plusieurs fois par seconde
+        // fait clignoter l'affichage en réalité mixte. Sinon, on prolonge simplement le message affiché.
+        if (text == lastCoachText && tutorial.IsShowingMessage) tutorial.ExtendMessage(1.5f);
+        else
+        {
+            lastCoachText = text;
+            tutorial.ShowMessage(text, 1.5f, false);
+        }
     }
 
     // Traduit une rotation en consigne simple, dans le repère du regard de l'utilisateur.
@@ -331,6 +365,9 @@ public class PedagogicalAssistant : MonoBehaviour
             "Un outil inadapté abîme la tête de vis et ne permet pas de contrôler le couple.",
             "Reposez-le et prenez l'outil indiqué sur le panneau.");
         Add("*", "conseil", "suivez le fantôme pour la position et le sens.", "", "");
+        Add("ordre_montage", "ordre", "Trop tôt : cette pièce ne peut pas encore être posée.",
+            "La gamme fixe un ordre : une pièce posée trop tôt bloque l'accès aux suivantes ou empêche un contrôle.",
+            "");
 
         // Erreurs d'orientation propres à chaque pièce (pourquoi = conséquence réelle).
         Add("piston", "orientation", "Le piston est monté à l'envers.",

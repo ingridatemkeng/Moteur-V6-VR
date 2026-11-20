@@ -1,0 +1,26 @@
+# GAMME COMPLÈTE : bas moteur du V6 (21 pièces, 2 serrages)
+# Une ligne par pièce (ou groupe de pièces identiques) :   pièce : prérequis, prérequis...
+#   * = n'importe quelle suite de caractères (camshaft_bushing* = les deux bagues)
+#   serrage:<nom du groupe> = attendre la fin de ce serrage
+# Les pièces d'une même ligne, et les lignes sans lien entre elles, se posent dans l'ordre que l'on veut.
+
+# Sous-ensemble piston-axe-bielle (gamme 10.1) : piston et bielle au choix, puis l'axe qui les traverse
+piston_head :
+piston_rod :
+piston_pin : piston_head, piston_rod
+
+# Paliers et vilebrequin (gamme 30) : les deux bagues au choix, puis le vilebrequin
+camshaft_bushing* :
+crank_shaft : camshaft_bushing*
+
+# Chapeau et visserie de la bielle (gamme 40.3) : serrage du groupe « ass_pist_f » ensuite
+piston_cap_rod : crank_shaft, piston_pin
+socket head cap screw* : piston_cap_rod
+hex nut* : socket head cap screw*
+
+# Ensembles piston-bielle (gamme 40.2) : au choix, une fois le vilebrequin en place
+ass_pist_f.0* : crank_shaft
+
+# Carter (gamme 50) : après tous les ensembles et le serrage des bielles ; puis serrage en croix
+carter : ass_pist_f.0*, serrage:ass_pist_f
+vis_carter* : carter

@@ -28,6 +28,10 @@ public class AdaptiveHelp : MonoBehaviour
     [Tooltip("Décoché : aide complète pour tout le monde (comme avant). Utile pour comparer avec / sans adaptation.")]
     public bool adaptive = true;
 
+    [Header("Couleur des pièces à prendre")]
+    [Tooltip("Coché : la couleur orange reste sur les pièces à prendre, même quand la compétence est maîtrisée.")]
+    public bool keepHighlight = true;
+
     [Header("Seuils de maîtrise")]
     [Tooltip("En dessous : niveau d'aide 2 (débutant).")]
     [Range(0f, 1f)] public float low = 0.5f;
@@ -57,7 +61,7 @@ public class AdaptiveHelp : MonoBehaviour
     public static readonly string[] Skills =
     {
         "piston", "bielle", "axe", "bague", "vilebrequin", "chapeau", "vis_chc", "ecrou",
-        "ensemble", "carter", "vis_carter", "serrage", "ordre_serrage"
+        "ensemble", "carter", "vis_carter", "serrage", "ordre_serrage", "ordre_montage"
     };
 
     // ---------- Compétence d'une pièce (mêmes règles que analyse_sessions.py) ----------
@@ -96,6 +100,9 @@ public class AdaptiveHelp : MonoBehaviour
             p.onSnapped.AddListener(() => Observe(SkillOf(p.name), true, p.name));
             p.onWrongOrientation.AddListener(() => Observe(SkillOf(p.name), false, p.name));
             p.onWrongSide.AddListener(() => Observe(SkillOf(p.name), false, p.name));
+            // Ordre de montage (graphe de précédence) : une erreur d'ordre, ou une pose dans le bon ordre.
+            p.onWrongOrder.AddListener(() => Observe("ordre_montage", false, p.name));
+            p.onSnapped.AddListener(() => { if (GhostSequence.Instance != null && GhostSequence.Instance.FreeOrder) Observe("ordre_montage", true, p.name); });
             // Relâchée loin du fantôme : simple reprise en main, pas une tentative (même règle que le journal).
             p.onWrongPlace.AddListener(() => { if (p.LastDistance <= 0.10f) Observe(SkillOf(p.name), false, p.name); });
             // Mauvaise pièce : c'est la compétence de l'étape en cours qui est en défaut.
@@ -206,7 +213,10 @@ public class AdaptiveHelp : MonoBehaviour
     }
 
     // La pièce à prendre est colorée tant que la compétence n'est pas maîtrisée.
-    public bool ShouldHighlight(SnapToTarget piece) => LevelFor(piece) != Level.Maitrise;
+    // La couleur orange est-elle gardée pour cette pièce ?
+    // « Keep Highlight » coché : toujours (la couleur indique quelles pièces prendre, ce n'est pas une aide à retirer) ;
+    // décoché : seulement tant que la compétence n'est pas maîtrisée.
+    public bool ShouldHighlight(SnapToTarget piece) => keepHighlight || LevelFor(piece) != Level.Maitrise;
 
     // Le conseil de la pièce est affiché pour un débutant.
     public bool ShouldGiveAdvice(SnapToTarget piece) => LevelFor(piece) == Level.Debutant;

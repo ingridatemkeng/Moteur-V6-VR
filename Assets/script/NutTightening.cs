@@ -244,7 +244,9 @@ public class NutTightening : ToolTarget
                     break;
                 }
 
-                if (CurrentTorque < targetTorque - torqueTolerance)
+                // On juge le RÉGLAGE de la clé (la valeur du clic), pas ce qu'on a ajouté en forçant après le clic :
+                // une clé réglée à 20 N·m pour une consigne de 23 est une erreur, même si l'on a forcé jusqu'à 23.
+                if (ClickTorque < targetTorque - torqueTolerance || CurrentTorque < targetTorque - torqueTolerance)
                 {
                     // La clé a cliqué trop tôt : elle était réglée trop bas.
                     HadError = true;

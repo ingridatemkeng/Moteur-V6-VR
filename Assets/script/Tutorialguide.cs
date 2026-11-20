@@ -196,7 +196,30 @@ public class TutorialGuide : MonoBehaviour
         AdaptiveHelp ah = AdaptiveHelp.Instance;
         bool giveAdvice = ah == null || ah.ShouldGiveAdvice(piece);
         bool mastered = ah != null && ah.LevelFor(piece) == AdaptiveHelp.Level.Maitrise;
-        SetStep("Étape " + (index + 1) + "/" + count + (mastered ? " : " : " : posez ") + FriendlyName(piece.name) + "."
+
+        // Ordre libre : plusieurs pièces possibles, au choix de l'apprenant.
+        if (sequence != null && sequence.FreeOrder)
+        {
+            var names = new List<string>();
+            foreach (var a in sequence.Available)
+            {
+                string n = FriendlyName(a.name);
+                if (!names.Contains(n)) names.Add(n);
+            }
+            if (names.Count > 1)
+            {
+                SetStep("Pièces posées : " + index + "/" + count + "\nPosez au choix : " + string.Join(", ", names) + ".\n"
+                        + "Les pièces possibles sont en orange.");
+                return;
+            }
+        }
+
+        string counter = sequence != null && sequence.FreeOrder ? "Pièces posées : " + index + "/" + count + "\n"
+                                                                  : "Étape " + (index + 1) + "/" + count + " : ";
+        bool free = sequence != null && sequence.FreeOrder;
+        string label = FriendlyName(piece.name);
+        if (mastered && free) label = char.ToUpper(label[0]) + label.Substring(1);
+        SetStep(counter + (mastered ? "" : (free ? "Posez " : "posez ")) + label + "."
                 + (giveAdvice && !string.IsNullOrEmpty(advice) ? "\n" + advice : ""));
     }
 
@@ -225,11 +248,12 @@ public class TutorialGuide : MonoBehaviour
     private bool AllFinished()
     {
         if (groups.Length == 0) return false;
+        // Seuls comptent les serrages et les pièces de la gamme choisie (gamme simple ou complète).
         foreach (var g in groups)
-            if (g != null && !g.IsFinished) return false;
+            if (g != null && !g.IsFinished && (sequence == null || sequence.IsGroupInGamme(g))) return false;
         if (sequence != null && sequence.steps != null)
             foreach (var p in sequence.steps)
-                if (p != null && !p.IsPlaced) return false;
+                if (p != null && sequence.IsInGamme(p) && !p.IsPlaced) return false;
         return true;
     }
 
@@ -329,6 +353,12 @@ public class TutorialGuide : MonoBehaviour
     }
 
     public bool IsShowingMessage => hintText != "" && Time.time <= hintUntil;
+
+    // Prolonge le message affiché sans réécrire le texte (aucun recalcul de l'affichage).
+    public void ExtendMessage(float duration)
+    {
+        if (hintText != "") hintUntil = Mathf.Max(hintUntil, Time.time + duration);
+    }
 
     private bool silent;
 
